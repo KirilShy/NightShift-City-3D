@@ -1,51 +1,68 @@
 using UnityEngine;
 
-// Singleton that tracks city-wide trash statistics.
+// Singleton that tracks all city-wide statistics.
 // Attach this to the CityManager GameObject.
-// Other scripts access it via CityManager.Instance.
+// All other scripts access it via CityManager.Instance.
 public class CityManager : MonoBehaviour
 {
-    // The single shared instance — set automatically in Awake.
+    // The one shared instance, set automatically in Awake.
     public static CityManager Instance;
 
-    [Header("Stats (read-only in play mode)")]
-    public int totalTrashSpawned = 0;  // All trash ever created this session.
-    public int totalTrashCleaned = 0;  // All trash destroyed by robots.
-    public int activeTrash = 0;        // Trash currently on the map.
+    [Header("Trash Stats")]
+    public int totalTrashSpawned = 0;  // Every piece of trash ever created.
+    public int totalTrashCleaned = 0;  // Every piece of trash destroyed by CleanerBots.
+    public int activeTrash       = 0;  // Trash currently on the map.
+
+    [Header("Pothole Stats")]
+    public int totalPotholesSpawned  = 0; // Every pothole ever created.
+    public int totalPotholesRepaired = 0; // Every pothole destroyed by RepairBots.
+    public int activePotholes        = 0; // Potholes currently on the map.
 
     void Awake()
     {
-        // Simple singleton: whichever CityManager loads first wins.
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    // Called by TrashSpawner each time a new piece of trash is created.
+    // ----- Trash registration -----------------------------------------------
+
+    // Called by TrashSpawner whenever a new piece of trash is created.
     public void RegisterTrashSpawned()
     {
         totalTrashSpawned++;
         activeTrash++;
     }
 
-    // Called by RobotController each time a piece of trash is destroyed.
+    // Called by RobotController whenever a piece of trash is cleaned.
     public void RegisterTrashCleaned()
     {
         totalTrashCleaned++;
-        // Clamp to zero in case of any unexpected double-clean.
         activeTrash = Mathf.Max(0, activeTrash - 1);
     }
 
-    // Returns a 0–100 cleanliness score (100 = spotless, drops by 5 per active piece of trash).
-    public int GetCityHealth()
+    // ----- Pothole registration ---------------------------------------------
+
+    // Called by PotholeSpawner whenever a new pothole is created.
+    public void RegisterPotholeSpawned()
     {
-        return Mathf.Clamp(100 - activeTrash * 5, 0, 100);
+        totalPotholesSpawned++;
+        activePotholes++;
     }
 
+    // Called by RepairBotController whenever a pothole is repaired.
+    public void RegisterPotholeRepaired()
+    {
+        totalPotholesRepaired++;
+        activePotholes = Mathf.Max(0, activePotholes - 1);
+    }
 
+    // ----- City health -------------------------------------------------------
+
+    // Trash lowers health by 3 per piece; potholes lower it by 8 per pothole
+    // (potholes are more damaging — they are harder to fix and affect roads).
+    // Clamped between 0 (destroyed city) and 100 (perfect).
+    public int GetCityHealth()
+    {
+        return Mathf.Clamp(100 - activeTrash * 3 - activePotholes * 8, 0, 100);
+    }
 }
