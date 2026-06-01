@@ -1,0 +1,25 @@
+# Unity auto-generated folders — large and fully regenerated on open, never commit these
+/Library/
+/Temp/
+/Logs/
+/obj/
+/Build/
+/Builds/
+/UserSettings/
+
+# Auto-generated project files — Unity regenerates these from Assets/
+*.csproj
+*.sln
+*.slnx
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Unity crash reports
+sysinfo.txt
+crashlytics-build.properties
