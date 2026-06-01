@@ -1,35 +1,35 @@
-# NightShift City 3D — v0.2
+# NightShift City 3D — v0.3
 
-A Unity 3D simulation of an autonomous city-maintenance robot fleet. CleanerBots tackle trash; RepairBots fix road potholes — all while a live HUD tracks city health in real time.
-
-Built entirely with Unity primitive shapes and generated materials. No external assets.
+A Unity 3D city-maintenance robot simulation. CleanerBots clean trash; RepairBots fix potholes — all running autonomously while a live HUD tracks city health. Built entirely with Unity primitives and generated materials.
 
 ---
 
-## What's New in v0.2
+## What's New in v0.3 — Visual Polish Update
 
-- **RepairBots** (orange) autonomously find and repair road potholes
-- **Potholes** spawn on the road grid with an emissive warning ring
-- **Night city aesthetic** — dark ambient lighting, warm street lamp point lights, emissive windows
-- **Road system upgrade** — dashed center lines, sidewalks on every street
-- **Building windows** — emissive yellow window panes on all four faces of every building
-- **Rooftop details** — contrasting darker cap on each building
-- **Street lights** at all nine road intersections with warm point lights
-- **Trees and grass patches** at city corners
-- **Updated HUD** — shows trash, potholes, health, and both bot counts
-- **Updated city health formula** — potholes hurt more (×8) than trash (×3)
+| Area | Changes |
+|---|---|
+| **Buildings** | Lit + unlit window mix, entrance doors, 4 types of rooftop props (water tower, HVAC, antenna, penthouse) |
+| **Roads** | Crosswalks at 5 major intersections, curb edges alongside roads |
+| **Lighting** | 21 total street lights (intersections + mid-road fill), subtle night fog |
+| **Robots** | CleanerBot brush disc at front, RepairBot toolbox on body, pulsing indicator lights |
+| **Trash** | 3-piece pile (two cubes + a can cylinder), brighter yellow |
+| **Potholes** | Dark disc + emissive warning ring + 3 crack lines |
+| **HUD** | Version badge (v0.3), STABLE / WARNING / CRITICAL status, colour-coded bot sections |
+| **Camera** | WASD / scroll / Q-E navigation during Play mode |
 
 ---
 
 ## Features
 
-- **Autonomous CleanerBots** — find nearest unclaimed trash, claim it exclusively, clean it
-- **Autonomous RepairBots** — find nearest unclaimed pothole, claim it exclusively, repair it
-- **Exclusive claiming** — no two bots of the same type chase the same target
-- **Procedural city builder** — one-click Editor tool builds the full scene from code
-- **Live city HUD** — colour-coded health, active counts, totals, bot counts
-- **Night city visuals** — dark ambient, point-lit streets, emissive windows and sensors
-- **Primitive-only visuals** — cubes, spheres, cylinders; no external asset packages
+- **Autonomous CleanerBots (blue)** — find nearest unclaimed trash, claim it, clean it
+- **Autonomous RepairBots (orange)** — find nearest unclaimed pothole, claim it, repair it
+- **Exclusive claiming** — no two bots of the same type share a target
+- **Procedural city builder** — one-click Editor tool generates the entire scene from code
+- **Night atmosphere** — dark ambient, warm point-lit streets, emissive windows, distance fog
+- **Live city HUD** — status label, colour-coded health, active counts, bot counts
+- **WASD camera controller** — navigate freely in Play mode
+- **Pulsing robot sensors** — indicator lights breathe on each bot
+- **Primitive-only visuals** — zero external asset dependencies
 
 ---
 
@@ -48,12 +48,23 @@ Built entirely with Unity primitive shapes and generated materials. No external 
 ## How to Run
 
 1. Clone this repository
-2. Open the project in **Unity 6** (Universal Render Pipeline)
+2. Open in **Unity 6** (Universal Render Pipeline)
 3. Open `Assets/Scenes/SampleScene`
 4. Click **Tools → NightShift City → Build Basic Scene**
 5. Press **Play**
 
-No manual Inspector setup is required — everything is wired by the builder.
+No Inspector wiring required.
+
+---
+
+## Camera Controls (Play Mode)
+
+| Key | Action |
+|---|---|
+| W / S / ↑ / ↓ | Pan forward / back |
+| A / D / ← / → | Pan left / right |
+| Scroll wheel | Zoom in / out |
+| Q / E | Keyboard zoom out / in |
 
 ---
 
@@ -62,14 +73,16 @@ No manual Inspector setup is required — everything is wired by the builder.
 ```
 Assets/
 ├── Editor/
-│   └── NightShiftCityBuilder.cs   # One-click scene generator (v0.2)
+│   └── NightShiftCityBuilder.cs   # One-click scene generator (v0.3)
 ├── Prefabs/
-│   ├── Trash.prefab               # Auto-generated yellow trash pile
-│   └── Pothole.prefab             # Auto-generated road pothole
+│   ├── Trash.prefab               # 3-piece yellow pile
+│   └── Pothole.prefab             # Disc + warning ring + cracks
 ├── Scenes/
 │   └── SampleScene.unity
+├── BotPulse.cs                    # Pulsing indicator light animation
+├── CameraController.cs            # WASD/scroll camera navigation
 ├── CityManager.cs                 # Singleton — all city stats
-├── CityUI.cs                      # Self-building runtime HUD
+├── CityUI.cs                      # Self-building runtime HUD (v0.3)
 ├── RobotController.cs             # CleanerBot movement + trash logic
 ├── RobotLabel.cs                  # Billboard name labels above bots
 ├── RepairBotController.cs         # RepairBot movement + pothole logic
@@ -81,42 +94,18 @@ Assets/
 
 ---
 
-## How the Simulation Works
-
-```
-TrashSpawner    → spawns Trash prefab (tag "Trash", TrashItem component)
-PotholeSpawner  → spawns Pothole on road (tag "Pothole", PotholeItem component)
-
-RobotController (CleanerBot):
-  → FindGameObjectsWithTag("Trash")
-  → nearest unclaimed → TrashItem.Claim()
-  → MoveTowards target (X/Z plane)
-  → on arrival → Destroy(trash) → CityManager.RegisterTrashCleaned()
-
-RepairBotController (RepairBot):
-  → FindGameObjectsWithTag("Pothole")
-  → nearest unclaimed → PotholeItem.Claim()
-  → MoveTowards target (X/Z plane)
-  → on arrival → Destroy(pothole) → CityManager.RegisterPotholeRepaired()
-
-CityManager.GetCityHealth():
-  → 100 - activeTrash * 3 - activePotholes * 8   (clamped 0–100)
-
-CityUI → reads CityManager every frame → updates HUD text
-```
-
----
-
 ## City Health Formula
 
-| Factor | Health impact |
-|---|---|
-| Each piece of active trash | −3 |
-| Each unrepaired pothole | −8 |
-| Maximum health | 100 |
-| Minimum health | 0 |
+```
+health = 100 − (activeTrash × 3) − (activePotholes × 8)
+clamped to [0, 100]
+```
 
-Potholes damage the city more severely than loose trash, reflecting real infrastructure priorities.
+| Status | Range |
+|---|---|
+| 🟢 STABLE | 76 – 100 |
+| 🟡 WARNING | 41 – 75 |
+| 🔴 CRITICAL | 0 – 40 |
 
 ---
 
@@ -124,12 +113,11 @@ Potholes damage the city more severely than loose trash, reflecting real infrast
 
 - [ ] NavMesh pathfinding around buildings
 - [ ] Day/night lighting cycle
-- [ ] Potholes: spray-paint warning effect when spotted
-- [ ] Different robot speeds / priorities
-- [ ] Score system and high scores
-- [ ] Sound effects on clean/repair events
-- [ ] Multiple robot types (sweeper, inspector, etc.)
-- [ ] Scene save/load
+- [ ] Bot patrol zones (no random wandering)
+- [ ] Sound effects on clean / repair events
+- [ ] Different robot speeds and priorities
+- [ ] Score and high-score system
+- [ ] Scene save / load
 
 ---
 

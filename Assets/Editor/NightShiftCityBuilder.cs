@@ -1,5 +1,5 @@
-// NightShiftCityBuilder.cs — v0.2
-// Place this file in Assets/Editor/ so Unity only compiles it in the editor.
+// NightShiftCityBuilder.cs — v0.3
+// Place this file in Assets/Editor/ — Unity only compiles it in the editor.
 // Menu: Tools > NightShift City > Build Basic Scene
 
 using TMPro;
@@ -11,13 +11,10 @@ using UnityEngine.SceneManagement;
 
 public static class NightShiftCityBuilder
 {
-    private const string RootName = "NightShift City [Generated]";
-
-    // Road grid constants — PotholeSpawner.cs uses these same values.
-    private const float MapHalf      = 22f;
-    private const float RoadMainW    = 3.5f;
-    private const float RoadSecW     = 2.5f;
-    private const float RoadLength   = 44f;
+    private const string RootName  = "NightShift City [Generated]";
+    private const float  RoadMainW = 3.5f;
+    private const float  RoadSecW  = 2.5f;
+    private const float  RoadLen   = 44f;
 
     // =========================================================================
     // MENU ITEMS
@@ -27,58 +24,70 @@ public static class NightShiftCityBuilder
     public static void BuildBasicScene()
     {
         bool ok = EditorUtility.DisplayDialog(
-            "Build NightShift City v0.2",
+            "Build NightShift City v0.3",
             "This will create (or replace) the full city scene.\n\n" +
             "Previously generated objects will be removed.\nContinue?",
             "Build", "Cancel");
         if (!ok) return;
 
-        Debug.Log("[Builder] Starting v0.2 build...");
+        Debug.Log("[Builder] v0.3 build starting...");
 
         EnsureTagExists("Trash");
         EnsureTagExists("Pothole");
         RemoveGeneratedObjects();
 
-        // ---- Materials -------------------------------------------------------
-        Material matGround   = Make("Mat_Ground",   new Color(0.22f, 0.20f, 0.18f));
-        Material matGrass    = Make("Mat_Grass",    new Color(0.10f, 0.26f, 0.10f));
-        Material matRoad     = Make("Mat_Road",     new Color(0.09f, 0.09f, 0.09f));
-        Material matLane     = Make("Mat_Lane",     new Color(0.92f, 0.90f, 0.75f));
-        Material matSidewalk = Make("Mat_Sidewalk", new Color(0.40f, 0.38f, 0.35f));
-        Material matPole     = Make("Mat_Pole",     new Color(0.18f, 0.18f, 0.20f));
-        Material matBulb     = Emissive("Mat_Bulb", new Color(1f, 0.95f, 0.7f), new Color(1.5f, 1.0f, 0.3f));
-        Material matTrunk    = Make("Mat_Trunk",    new Color(0.26f, 0.16f, 0.07f));
-        Material matLeaf     = Make("Mat_Leaf",     new Color(0.08f, 0.22f, 0.08f));
-        Material matWin      = Emissive("Mat_Win",  new Color(1f, 0.92f, 0.65f), new Color(0.55f, 0.42f, 0.08f));
-        Material matTrash    = Make("Mat_Trash",    new Color(1.00f, 0.85f, 0.00f));
-        Material matPothole  = Make("Mat_Pothole",  new Color(0.13f, 0.10f, 0.08f));
-        Material matPotWarn  = Emissive("Mat_PotWarn", new Color(0.9f, 0.45f, 0.0f), new Color(0.5f, 0.22f, 0.0f));
+        // ---- Environment materials ------------------------------------------
+        Material matGround    = Make("Mat_Ground",    new Color(0.20f, 0.18f, 0.16f));
+        Material matGrass     = Make("Mat_Grass",     new Color(0.09f, 0.24f, 0.09f));
+        Material matRoad      = Make("Mat_Road",      new Color(0.09f, 0.09f, 0.09f));
+        Material matLane      = Make("Mat_Lane",      new Color(0.90f, 0.88f, 0.72f));
+        Material matCrosswalk = Make("Mat_Crosswalk", new Color(0.86f, 0.84f, 0.70f));
+        Material matSidewalk  = Make("Mat_Sidewalk",  new Color(0.38f, 0.36f, 0.33f));
+        Material matCurb      = Make("Mat_Curb",      new Color(0.48f, 0.46f, 0.43f));
+        Material matPole      = Make("Mat_Pole",      new Color(0.17f, 0.17f, 0.19f));
+        Material matBulb      = Emissive("Mat_Bulb",  new Color(1f, 0.95f, 0.7f),  new Color(1.6f, 1.1f, 0.3f));
+        Material matTrunk     = Make("Mat_Trunk",     new Color(0.24f, 0.15f, 0.06f));
+        Material matLeaf      = Make("Mat_Leaf",      new Color(0.07f, 0.21f, 0.07f));
+
+        // ---- Building materials ---------------------------------------------
+        Material matWinLit  = Emissive("Mat_WinLit",  new Color(1f, 0.92f, 0.62f), new Color(0.6f, 0.44f, 0.08f));
+        Material matWinDark = Make("Mat_WinDark",     new Color(0.10f, 0.13f, 0.20f)); // unlit / empty office
+        Material matDoor    = Make("Mat_Door",        new Color(0.10f, 0.08f, 0.07f));
+        Material matRoofDet = Make("Mat_RoofDetail",  new Color(0.18f, 0.18f, 0.20f));
 
         // Five building colour variants
         Material[] bMats = {
-            Make("Mat_Bldg_A", new Color(0.38f, 0.44f, 0.50f)),
-            Make("Mat_Bldg_B", new Color(0.48f, 0.44f, 0.38f)),
-            Make("Mat_Bldg_C", new Color(0.22f, 0.24f, 0.27f)),
-            Make("Mat_Bldg_D", new Color(0.30f, 0.40f, 0.35f)),
-            Make("Mat_Bldg_E", new Color(0.22f, 0.27f, 0.42f)),
+            Make("Mat_Bldg_A", new Color(0.36f, 0.43f, 0.50f)),
+            Make("Mat_Bldg_B", new Color(0.46f, 0.42f, 0.36f)),
+            Make("Mat_Bldg_C", new Color(0.20f, 0.22f, 0.26f)),
+            Make("Mat_Bldg_D", new Color(0.28f, 0.38f, 0.33f)),
+            Make("Mat_Bldg_E", new Color(0.20f, 0.25f, 0.40f)),
         };
 
-        // Bot materials
-        Material matCleanBody  = Make("Mat_CleanBody",  new Color(0.12f, 0.32f, 0.60f));
-        Material matRepairBody = Make("Mat_RepairBody", new Color(0.72f, 0.35f, 0.04f));
-        Material matWheel      = Make("Mat_Wheel",      new Color(0.08f, 0.08f, 0.08f));
-        Material matCyanEye    = Emissive("Mat_CyanEye",   new Color(0f, 1f, 1f),    new Color(0f, 0.55f, 0.55f));
-        Material matOrangeEye  = Emissive("Mat_OrangeEye", new Color(1f, 0.5f, 0f),  new Color(0.55f, 0.22f, 0f));
-        Material matBotLight   = Emissive("Mat_BotLight",  new Color(0.5f, 1f, 0.2f),new Color(0.18f, 0.48f, 0.04f));
+        // ---- Problem object materials ----------------------------------------
+        Material matTrash   = Make("Mat_Trash",   new Color(1.00f, 0.85f, 0.00f));
+        Material matPothole = Make("Mat_Pothole", new Color(0.12f, 0.09f, 0.07f));
+        Material matPotWarn = Emissive("Mat_PotWarn", new Color(0.88f, 0.42f, 0.0f), new Color(0.5f, 0.20f, 0.0f));
 
-        // ---- Build scene -----------------------------------------------------
+        // ---- Robot materials ------------------------------------------------
+        Material matCleanBody  = Make("Mat_CleanBody",  new Color(0.11f, 0.30f, 0.58f));
+        Material matRepairBody = Make("Mat_RepairBody", new Color(0.70f, 0.33f, 0.04f));
+        Material matWheel      = Make("Mat_Wheel",      new Color(0.07f, 0.07f, 0.07f));
+        Material matCyanEye    = Emissive("Mat_CyanEye",   new Color(0f, 1f, 1f),    new Color(0f, 0.6f, 0.6f));
+        Material matOrangeEye  = Emissive("Mat_OrangeEye", new Color(1f, 0.5f, 0f),  new Color(0.6f, 0.24f, 0f));
+        Material matBotLight   = Emissive("Mat_BotLight",  new Color(0.4f, 1f, 0.2f),new Color(0.16f, 0.5f, 0.04f));
+        Material matBrush      = Make("Mat_Brush",   new Color(0.60f, 0.60f, 0.65f));
+        Material matToolbox    = Make("Mat_Toolbox", new Color(0.68f, 0.38f, 0.07f));
+
+        // ---- Build scene ----------------------------------------------------
         GameObject root = new GameObject(RootName);
 
         SetupNightLighting();
         BuildGround(root, matGround);
         BuildGrassPatches(root, matGrass);
-        BuildRoads(root, matRoad, matLane, matSidewalk);
-        BuildBuildings(root, bMats, matWin);
+        BuildRoads(root, matRoad, matLane, matSidewalk, matCurb);
+        BuildCrosswalks(root, matCrosswalk);
+        BuildBuildings(root, bMats, matWinLit, matWinDark, matDoor, matRoofDet);
         BuildStreetLights(root, matPole, matBulb);
         BuildTrees(root, matTrunk, matLeaf);
         PositionCamera();
@@ -89,16 +98,16 @@ public static class NightShiftCityBuilder
         BuildCityManager(root);
         BuildTrashSpawner(root, trashPrefab);
         BuildPotholeSpawner(root, potholePrefab);
-        BuildCleanerBots(root, matCleanBody, matWheel, matCyanEye, matBotLight);
-        BuildRepairBots(root, matRepairBody, matWheel, matOrangeEye, matBotLight);
+        BuildCleanerBots(root, matCleanBody, matWheel, matCyanEye, matBotLight, matBrush);
+        BuildRepairBots(root, matRepairBody, matWheel, matOrangeEye, matBotLight, matToolbox);
 
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-        Debug.Log("[Builder] v0.2 build complete.");
+        Debug.Log("[Builder] v0.3 build complete.");
 
-        EditorUtility.DisplayDialog("Done — NightShift City v0.2",
-            "Scene built successfully!\n\n" +
-            "  Blue CleanerBots  → clean trash\n" +
-            "  Orange RepairBots → repair potholes\n\n" +
+        EditorUtility.DisplayDialog("NightShift City v0.3 Built!",
+            "Scene is ready.\n\n" +
+            "  WASD / Arrows — pan camera\n" +
+            "  Scroll / Q-E  — zoom\n\n" +
             "Press Play to start the simulation.", "OK");
     }
 
@@ -119,15 +128,14 @@ public static class NightShiftCityBuilder
 
     static void RemoveGeneratedObjects()
     {
-        GameObject existing = GameObject.Find(RootName);
+        var existing = GameObject.Find(RootName);
         if (existing != null) Object.DestroyImmediate(existing);
     }
 
     static void EnsureTagExists(string tag)
     {
-        SerializedObject mgr = new SerializedObject(
-            AssetDatabase.LoadMainAssetAtPath("ProjectSettings/TagManager.asset"));
-        SerializedProperty tags = mgr.FindProperty("tags");
+        var mgr  = new SerializedObject(AssetDatabase.LoadMainAssetAtPath("ProjectSettings/TagManager.asset"));
+        var tags = mgr.FindProperty("tags");
         for (int i = 0; i < tags.arraySize; i++)
             if (tags.GetArrayElementAtIndex(i).stringValue == tag) return;
         tags.InsertArrayElementAtIndex(tags.arraySize);
@@ -137,58 +145,58 @@ public static class NightShiftCityBuilder
 
     static Material Make(string name, Color color)
     {
-        Shader sh = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-        Material m = new Material(sh) { name = name };
+        var sh = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        var m  = new Material(sh) { name = name };
         m.color = color;
         return m;
     }
 
     static Material Emissive(string name, Color baseCol, Color glow)
     {
-        Material m = Make(name, baseCol);
+        var m = Make(name, baseCol);
         m.EnableKeyword("_EMISSION");
         if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", glow);
         return m;
     }
 
-    // Creates a primitive, parents it, sets local transform, assigns material,
-    // and removes its collider (visual children don't need physics).
+    // Creates a primitive child with local position/scale, removes its collider.
     static GameObject AddPart(GameObject parent, string partName, PrimitiveType type,
-        Vector3 localPos, Vector3 localScale, Material mat)
+        Vector3 lp, Vector3 ls, Material mat)
     {
-        GameObject obj = GameObject.CreatePrimitive(type);
+        var obj = GameObject.CreatePrimitive(type);
         obj.name = partName;
         obj.transform.SetParent(parent.transform, false);
-        obj.transform.localPosition = localPos;
-        obj.transform.localScale    = localScale;
+        obj.transform.localPosition = lp;
+        obj.transform.localScale    = ls;
         obj.GetComponent<Renderer>().material = mat;
         Object.DestroyImmediate(obj.GetComponent<Collider>());
         return obj;
     }
 
     // =========================================================================
-    // NIGHT LIGHTING
+    // NIGHT LIGHTING + FOG
     // =========================================================================
 
     static void SetupNightLighting()
     {
-        // Nearly black ambient — street lights do all the real work.
+        // Nearly-black ambient so point lights do most of the work.
         RenderSettings.ambientMode  = AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.04f, 0.04f, 0.09f);
 
-        // Low-intensity moonlight (cool blue-white).
-        Light[] all = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
-        Light dir = null;
-        foreach (Light l in all)
-            if (l.type == LightType.Directional) { dir = l; break; }
+        // Subtle distance fog deepens the night atmosphere.
+        RenderSettings.fog              = true;
+        RenderSettings.fogMode          = FogMode.Linear;
+        RenderSettings.fogColor         = new Color(0.03f, 0.04f, 0.10f);
+        RenderSettings.fogStartDistance = 28f;
+        RenderSettings.fogEndDistance   = 58f;
 
-        if (dir == null)
-        {
-            dir      = new GameObject("Directional Light").AddComponent<Light>();
-            dir.type = LightType.Directional;
-        }
-        dir.intensity = 0.18f;
-        dir.color     = new Color(0.68f, 0.73f, 0.95f);
+        // Low-intensity moonlight (cool blue-white).
+        var all = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
+        Light dir = null;
+        foreach (var l in all) if (l.type == LightType.Directional) { dir = l; break; }
+        if (dir == null) { dir = new GameObject("Directional Light").AddComponent<Light>(); dir.type = LightType.Directional; }
+        dir.intensity = 0.15f;
+        dir.color     = new Color(0.65f, 0.70f, 0.95f);
         dir.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
     }
 
@@ -198,27 +206,25 @@ public static class NightShiftCityBuilder
 
     static void BuildGround(GameObject root, Material mat)
     {
-        GameObject g = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        var g = GameObject.CreatePrimitive(PrimitiveType.Plane);
         g.name = "Ground";
         g.transform.SetParent(root.transform, false);
-        g.transform.localScale = new Vector3(5f, 1f, 5f); // 50×50 world units
+        g.transform.localScale = new Vector3(5f, 1f, 5f); // 50×50
         g.GetComponent<Renderer>().material = mat;
     }
 
     static void BuildGrassPatches(GameObject root, Material mat)
     {
-        GameObject c = new GameObject("GrassPatches");
+        var c = new GameObject("GrassPatches");
         c.transform.SetParent(root.transform, false);
 
-        // Small green planes at the far corners of the city.
         (float x, float z, float w, float d)[] patches = {
             ( 19f,  19f, 5f, 5f), (-19f,  19f, 5f, 5f),
             ( 19f, -19f, 5f, 5f), (-19f, -19f, 5f, 5f),
         };
-
         foreach (var (x, z, w, d) in patches)
         {
-            GameObject p = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            var p = GameObject.CreatePrimitive(PrimitiveType.Plane);
             p.name = "Grass";
             p.transform.SetParent(c.transform, false);
             p.transform.position   = new Vector3(x, 0.01f, z);
@@ -229,31 +235,27 @@ public static class NightShiftCityBuilder
     }
 
     // =========================================================================
-    // ROADS — surface cubes + dashed center lines + sidewalks
+    // ROADS — surface + dashed center line + sidewalks + curbs
     // =========================================================================
 
-    static void BuildRoads(GameObject root, Material matRoad, Material matLane, Material matSidewalk)
+    static void BuildRoads(GameObject root, Material matRoad, Material matLane,
+        Material matSidewalk, Material matCurb)
     {
-        GameObject c = new GameObject("Roads");
+        var c = new GameObject("Roads");
         c.transform.SetParent(root.transform, false);
 
-        // (isEW, center along perpendicular axis, road width)
         (bool ew, float center, float w)[] roads = {
-            (true,    0f, RoadMainW), // EW main
-            (false,   0f, RoadMainW), // NS main
-            (true,   15f, RoadSecW),  // EW north
-            (true,  -15f, RoadSecW),  // EW south
-            (false,  15f, RoadSecW),  // NS east
-            (false, -15f, RoadSecW),  // NS west
+            (true,    0f, RoadMainW), (false,   0f, RoadMainW),
+            (true,   15f, RoadSecW),  (true,  -15f, RoadSecW),
+            (false,  15f, RoadSecW),  (false, -15f, RoadSecW),
         };
 
         foreach (var (ew, center, w) in roads)
         {
             // Road surface
-            Vector3 pos   = ew ? new Vector3(0f, 0.02f, center) : new Vector3(center, 0.02f, 0f);
-            Vector3 scale = ew ? new Vector3(RoadLength, 0.05f, w) : new Vector3(w, 0.05f, RoadLength);
-
-            GameObject road = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var pos   = ew ? new Vector3(0f, 0.02f, center) : new Vector3(center, 0.02f, 0f);
+            var scale = ew ? new Vector3(RoadLen, 0.05f, w)  : new Vector3(w, 0.05f, RoadLen);
+            var road  = GameObject.CreatePrimitive(PrimitiveType.Cube);
             road.name = "Road";
             road.transform.SetParent(c.transform, false);
             road.transform.position   = pos;
@@ -262,136 +264,192 @@ public static class NightShiftCityBuilder
             Object.DestroyImmediate(road.GetComponent<BoxCollider>());
 
             // Dashed center line
-            BuildDashedLine(c, ew, center, RoadLength, matLane);
+            BuildDashes(c, ew, center, RoadLen, matLane);
 
-            // Sidewalks on both sides
-            BuildSidewalks(c, ew, center, w, RoadLength, matSidewalk);
+            // Sidewalks + curbs on both sides
+            BuildSidewalks(c, ew, center, w, RoadLen, matSidewalk, matCurb);
         }
     }
 
-    static void BuildDashedLine(GameObject parent, bool isEW, float center, float length, Material mat)
+    static void BuildDashes(GameObject parent, bool ew, float center, float length, Material mat)
     {
-        float dashLen = 1.5f, gap = 1.5f, step = dashLen + gap;
-        int count = Mathf.FloorToInt(length / step);
-        float start = -(count * step) * 0.5f + dashLen * 0.5f;
-
+        float dash = 1.5f, gap = 1.5f, step = dash + gap;
+        int   count = Mathf.FloorToInt(length / step);
+        float start = -(count * step) * 0.5f + dash * 0.5f;
         for (int i = 0; i < count; i++)
         {
-            float offset = start + i * step;
-            Vector3 pos   = isEW ? new Vector3(offset, 0.04f, center)  : new Vector3(center, 0.04f, offset);
-            Vector3 scale = isEW ? new Vector3(dashLen, 0.02f, 0.12f) : new Vector3(0.12f, 0.02f, dashLen);
-
-            GameObject dash = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            dash.name = "Dash";
-            dash.transform.SetParent(parent.transform, false);
-            dash.transform.position   = pos;
-            dash.transform.localScale = scale;
-            dash.GetComponent<Renderer>().material = mat;
-            Object.DestroyImmediate(dash.GetComponent<BoxCollider>());
+            float off   = start + i * step;
+            var pos     = ew ? new Vector3(off, 0.04f, center)  : new Vector3(center, 0.04f, off);
+            var scale   = ew ? new Vector3(dash, 0.02f, 0.12f)  : new Vector3(0.12f, 0.02f, dash);
+            var d = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            d.name = "Dash"; d.transform.SetParent(parent.transform, false);
+            d.transform.position = pos; d.transform.localScale = scale;
+            d.GetComponent<Renderer>().material = mat;
+            Object.DestroyImmediate(d.GetComponent<BoxCollider>());
         }
     }
 
-    static void BuildSidewalks(GameObject parent, bool isEW, float center,
-        float roadW, float length, Material mat)
+    static void BuildSidewalks(GameObject parent, bool ew, float center, float roadW,
+        float length, Material matSW, Material matCurb)
     {
-        float sideOff = roadW * 0.5f + 0.6f; // offset from road center to sidewalk center
+        float sideOff = roadW * 0.5f + 0.65f;
         float sw = 1.1f, sh = 0.09f;
+        float curbH = 0.11f, curbW = 0.12f;
 
         for (int side = -1; side <= 1; side += 2)
         {
-            Vector3 pos, scale;
-            if (isEW)
+            // Sidewalk slab
+            Vector3 sPos, sScale, cPos, cScale;
+            if (ew)
             {
-                pos   = new Vector3(0f, sh * 0.5f, center + side * sideOff);
-                scale = new Vector3(length, sh, sw);
+                sPos   = new Vector3(0f,  sh * 0.5f,  center + side * sideOff);
+                sScale = new Vector3(length, sh, sw);
+                // Curb between road and sidewalk
+                cPos   = new Vector3(0f, curbH * 0.5f, center + side * (roadW * 0.5f + curbW * 0.5f));
+                cScale = new Vector3(length, curbH, curbW);
             }
             else
             {
-                pos   = new Vector3(center + side * sideOff, sh * 0.5f, 0f);
-                scale = new Vector3(sw, sh, length);
+                sPos   = new Vector3(center + side * sideOff, sh * 0.5f, 0f);
+                sScale = new Vector3(sw, sh, length);
+                cPos   = new Vector3(center + side * (roadW * 0.5f + curbW * 0.5f), curbH * 0.5f, 0f);
+                cScale = new Vector3(curbW, curbH, length);
             }
 
-            GameObject s = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            s.name = "Sidewalk";
-            s.transform.SetParent(parent.transform, false);
-            s.transform.position   = pos;
-            s.transform.localScale = scale;
-            s.GetComponent<Renderer>().material = mat;
-            Object.DestroyImmediate(s.GetComponent<BoxCollider>());
+            var sw_obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sw_obj.name = "Sidewalk"; sw_obj.transform.SetParent(parent.transform, false);
+            sw_obj.transform.position = sPos; sw_obj.transform.localScale = sScale;
+            sw_obj.GetComponent<Renderer>().material = matSW;
+            Object.DestroyImmediate(sw_obj.GetComponent<BoxCollider>());
+
+            var curb = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            curb.name = "Curb"; curb.transform.SetParent(parent.transform, false);
+            curb.transform.position = cPos; curb.transform.localScale = cScale;
+            curb.GetComponent<Renderer>().material = matCurb;
+            Object.DestroyImmediate(curb.GetComponent<BoxCollider>());
         }
     }
 
     // =========================================================================
-    // BUILDINGS — with emissive windows and rooftop details
+    // CROSSWALKS — white stripes at the 5 primary intersections
     // =========================================================================
 
-    // Pre-baked tint values so each build looks the same.
-    static readonly float[] BldgTints = {
-        1.00f, 0.87f, 1.13f, 0.92f, 1.08f, 0.82f, 1.18f, 0.95f,
-        1.05f, 0.86f, 1.14f, 0.90f, 1.10f, 0.84f, 1.16f, 0.93f,
-    };
-
-    static void BuildBuildings(GameObject root, Material[] bMats, Material winMat)
+    static void BuildCrosswalks(GameObject root, Material mat)
     {
-        GameObject c = new GameObject("Buildings");
+        var c = new GameObject("Crosswalks");
         c.transform.SetParent(root.transform, false);
 
-        // (centerX, centerZ, height, widthX, depthZ, material index)
+        // (intersection x, intersection z, EW road width, NS road width)
+        (float ix, float iz, float ew, float ns)[] ixns = {
+            ( 0f,  0f, RoadMainW, RoadMainW),
+            ( 0f, 15f, RoadMainW, RoadSecW),
+            ( 0f,-15f, RoadMainW, RoadSecW),
+            (15f,  0f, RoadSecW,  RoadMainW),
+            (-15f, 0f, RoadSecW,  RoadMainW),
+        };
+
+        foreach (var (ix, iz, ewW, nsW) in ixns)
+        {
+            // East + West: stripes on EW road, crossing the NS road
+            for (int i = 0; i < 4; i++)
+            {
+                float xE = ix + nsW * 0.5f + 0.25f + i * 0.55f;
+                float xW = ix - nsW * 0.5f - 0.25f - i * 0.55f;
+                PutStripe(c, new Vector3(xE, 0.035f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
+                PutStripe(c, new Vector3(xW, 0.035f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
+            }
+            // North + South: stripes on NS road, crossing the EW road
+            for (int i = 0; i < 4; i++)
+            {
+                float zN = iz + ewW * 0.5f + 0.25f + i * 0.55f;
+                float zS = iz - ewW * 0.5f - 0.25f - i * 0.55f;
+                PutStripe(c, new Vector3(ix, 0.035f, zN), new Vector3(nsW, 0.02f, 0.42f), mat);
+                PutStripe(c, new Vector3(ix, 0.035f, zS), new Vector3(nsW, 0.02f, 0.42f), mat);
+            }
+        }
+    }
+
+    static void PutStripe(GameObject parent, Vector3 worldPos, Vector3 worldScale, Material mat)
+    {
+        var s = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        s.name = "Stripe"; s.transform.SetParent(parent.transform, false);
+        s.transform.localPosition = worldPos;   // parent has no scale/offset
+        s.transform.localScale    = worldScale;
+        s.GetComponent<Renderer>().material = mat;
+        Object.DestroyImmediate(s.GetComponent<BoxCollider>());
+    }
+
+    // =========================================================================
+    // BUILDINGS — varied heights, lit+dark windows, entrance doors, rooftop props
+    // =========================================================================
+
+    static readonly float[] BldgTints = {
+        1.00f, 0.86f, 1.14f, 0.91f, 1.09f, 0.81f, 1.19f, 0.94f,
+        1.06f, 0.85f, 1.13f, 0.89f, 1.11f, 0.83f, 1.17f, 0.93f,
+    };
+
+    static void BuildBuildings(GameObject root, Material[] bMats,
+        Material matWinLit, Material matWinDark, Material matDoor, Material matRoofDet)
+    {
+        var c = new GameObject("Buildings");
+        c.transform.SetParent(root.transform, false);
+
+        // (cx, cz, height, widthX, depthZ, mat index)
         (float x, float z, float h, float w, float d, int m)[] specs = {
-            // NE quadrant
-            ( 8f,  8f,  8f, 3.0f, 3.0f, 0), (12f,  7f,  5f, 2.5f, 3.0f, 1),
-            ( 8f, 12f,  6f, 2.0f, 2.0f, 2), (18f, 18f, 10f, 4.0f, 3.5f, 3),
-            (11f, 18f,  4f, 3.0f, 2.0f, 0),
-            // NW quadrant
-            (-8f,  8f,  7f, 3.0f, 3.0f, 1), (-12f, 10f, 4f, 2.0f, 2.5f, 2),
-            (-18f, 18f, 9f, 3.5f, 4.0f, 4), ( -8f, 18f, 5f, 2.5f, 2.0f, 0),
-            // SE quadrant
-            ( 8f, -8f,  6f, 2.5f, 2.5f, 3), (11f, -12f, 8f, 3.0f, 3.0f, 0),
-            (18f,-18f,  5f, 2.0f, 2.0f, 1), ( 7f, -18f, 7f, 2.0f, 3.0f, 2),
-            // SW quadrant
-            (-8f, -8f,  9f, 3.0f, 3.0f, 4), (-12f, -7f, 5f, 2.0f, 2.0f, 0),
-            (-18f,-18f, 7f, 3.5f, 3.0f, 1),
+            // NE
+            ( 8f,  8f, 8.5f, 3.0f, 3.0f, 0), (12f,  7f,  5.0f, 2.5f, 3.0f, 1),
+            ( 8f, 12f, 6.5f, 2.0f, 2.0f, 2), (18f, 18f, 11.0f, 4.0f, 3.5f, 3),
+            (11f, 18f, 4.5f, 3.0f, 2.0f, 0),
+            // NW
+            (-8f,  8f, 7.5f, 3.0f, 3.0f, 1), (-12f, 10f, 4.5f, 2.0f, 2.5f, 2),
+            (-18f, 18f,9.5f, 3.5f, 4.0f, 4), ( -8f, 18f, 5.5f, 2.5f, 2.0f, 0),
+            // SE
+            ( 8f, -8f, 6.5f, 2.5f, 2.5f, 3), (11f,-12f,  8.0f, 3.0f, 3.0f, 0),
+            (18f,-18f, 5.5f, 2.0f, 2.0f, 1), ( 7f,-18f,  7.5f, 2.0f, 3.0f, 2),
+            // SW
+            (-8f, -8f, 9.0f, 3.0f, 3.0f, 4), (-12f,-7f, 5.5f, 2.0f, 2.0f, 0),
+            (-18f,-18f,7.0f, 3.5f, 3.0f, 1),
         };
 
         for (int i = 0; i < specs.Length; i++)
         {
             var (x, z, h, w, d, m) = specs[i];
-            float tint = BldgTints[i % BldgTints.Length];
+            float t = BldgTints[i % BldgTints.Length];
 
-            // Each building gets its own material copy with a slight brightness tint.
-            Material bm = new Material(bMats[m % bMats.Length]);
-            Color c0 = bm.color;
-            bm.color = new Color(
-                Mathf.Clamp01(c0.r * tint),
-                Mathf.Clamp01(c0.g * tint),
-                Mathf.Clamp01(c0.b * tint));
+            var bm = new Material(bMats[m % bMats.Length]);
+            var c0 = bm.color;
+            bm.color = new Color(Mathf.Clamp01(c0.r * t), Mathf.Clamp01(c0.g * t), Mathf.Clamp01(c0.b * t));
 
-            GameObject bldg = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var bldg = GameObject.CreatePrimitive(PrimitiveType.Cube);
             bldg.name = "Building_" + (i + 1).ToString("D2");
             bldg.transform.SetParent(c.transform, false);
             bldg.transform.position   = new Vector3(x, h * 0.5f, z);
             bldg.transform.localScale = new Vector3(w, h, d);
             bldg.GetComponent<Renderer>().material = bm;
 
-            // Emissive windows on all four faces.
-            AddWindows(bldg, w, h, d, winMat);
+            // Windows — mix of lit and unlit
+            AddWindows(bldg, w, h, d, matWinLit, matWinDark, i);
 
-            // Rooftop detail: slightly smaller cube in a darker tone.
-            Material roofMat = new Material(bm);
-            roofMat.color = bm.color * 0.60f;
+            // Entrance door on front (+Z) face
+            PlaceDoor(bldg, w, h, d, matDoor);
+
+            // Darker roof cap
+            var roofMat = new Material(bm); roofMat.color = bm.color * 0.55f;
             AddPart(bldg, "Roof", PrimitiveType.Cube,
                 new Vector3(0f, 0.5f + 0.20f / h, 0f),
-                new Vector3(0.88f, 0.40f / h, 0.88f),
-                roofMat);
+                new Vector3(0.90f, 0.40f / h, 0.90f), roofMat);
+
+            // Rooftop prop unique to this building
+            AddRooftopProp(c, x, z, h, w, d, i, matRoofDet);
         }
     }
 
-    // Adds emissive window panes as children of a building cube.
-    // Because the building has non-unit scale, all child positions and scales
-    // must be divided by the building's scale to get the correct world size.
-    static void AddWindows(GameObject bldg, float bw, float bh, float bd, Material mat)
+    // Adds a grid of window panes to the front/back/side faces of a building.
+    // Buildings with non-unit scale require localScale = worldSize / buildingScale.
+    static void AddWindows(GameObject bldg, float bw, float bh, float bd,
+        Material matLit, Material matDark, int bldgIdx)
     {
-        if (bh < 2.5f) return; // very short buildings look fine without windows
+        if (bh < 2.5f) return;
 
         int rows  = Mathf.Clamp(Mathf.FloorToInt(bh / 2.0f), 1, 5);
         int colsX = Mathf.Clamp(Mathf.FloorToInt(bw / 1.3f), 1, 4);
@@ -399,104 +457,176 @@ public static class NightShiftCityBuilder
 
         for (int r = 0; r < rows; r++)
         {
-            // localY: distribute rows evenly between -0.38 and +0.38 of building height
             float ly = Mathf.Lerp(-0.38f, 0.38f, (r + 0.5f) / rows);
 
-            // Front (+Z) and back (-Z) faces
-            for (int c = 0; c < colsX; c++)
+            for (int col = 0; col < colsX; col++)
             {
-                float lx = Mathf.Lerp(-0.38f, 0.38f, (c + 0.5f) / colsX);
+                float lx  = Mathf.Lerp(-0.38f, 0.38f, (col + 0.5f) / colsX);
+                // 75% of windows lit, 25% dark — deterministic per building+position
+                bool lit  = (bldgIdx + r * 3 + col) % 4 != 0;
+                var  mat  = lit ? matLit : matDark;
                 PlaceWindow(bldg, new Vector3(lx, ly,  0.52f), bw, bh, bd, true,  mat);
                 PlaceWindow(bldg, new Vector3(lx, ly, -0.52f), bw, bh, bd, true,  mat);
             }
-
-            // Right (+X) and left (-X) faces
-            for (int c = 0; c < colsZ; c++)
+            for (int col = 0; col < colsZ; col++)
             {
-                float lz = Mathf.Lerp(-0.38f, 0.38f, (c + 0.5f) / colsZ);
+                float lz = Mathf.Lerp(-0.38f, 0.38f, (col + 0.5f) / colsZ);
+                bool lit = (bldgIdx + r * 3 + col + 2) % 4 != 0;
+                var  mat = lit ? matLit : matDark;
                 PlaceWindow(bldg, new Vector3( 0.52f, ly, lz), bw, bh, bd, false, mat);
                 PlaceWindow(bldg, new Vector3(-0.52f, ly, lz), bw, bh, bd, false, mat);
             }
         }
     }
 
-    // Creates one window pane as a child of a building.
-    // isFrontBack = true  → depth is in the Z direction (front/back face)
-    // isFrontBack = false → depth is in the X direction (side face)
+    // One window pane as a child.
+    // isFrontBack=true → pane faces ±Z; false → pane faces ±X.
     static void PlaceWindow(GameObject bldg, Vector3 lp,
-        float bw, float bh, float bd, bool isFrontBack, Material mat)
+        float bw, float bh, float bd, bool isFB, Material mat)
     {
-        // Desired world size of the window pane
         float ww = 0.30f, wh = 0.25f, wd = 0.07f;
-
-        // Divide by building scale so the child's world scale equals the desired size.
-        Vector3 ls = isFrontBack
-            ? new Vector3(ww / bw, wh / bh, wd / bd)
-            : new Vector3(wd / bw, wh / bh, ww / bd);
-
-        GameObject win = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        win.name = "Win";
-        win.transform.SetParent(bldg.transform, false);
+        var ls = isFB ? new Vector3(ww / bw, wh / bh, wd / bd)
+                      : new Vector3(wd / bw, wh / bh, ww / bd);
+        var win = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        win.name = "Win"; win.transform.SetParent(bldg.transform, false);
         win.transform.localPosition = lp;
         win.transform.localScale    = ls;
         win.GetComponent<Renderer>().material = mat;
         Object.DestroyImmediate(win.GetComponent<BoxCollider>());
     }
 
+    // Small dark door at the base of the front face.
+    static void PlaceDoor(GameObject bldg, float bw, float bh, float bd, Material mat)
+    {
+        // localY so world bottom of door = 0 (sits on ground)
+        float doorY = -0.5f + 0.25f / bh;
+        var door    = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        door.name   = "Door"; door.transform.SetParent(bldg.transform, false);
+        door.transform.localPosition = new Vector3(0f, doorY, 0.52f);
+        door.transform.localScale    = new Vector3(0.38f / bw, 0.50f / bh, 0.07f / bd);
+        door.GetComponent<Renderer>().material = mat;
+        Object.DestroyImmediate(door.GetComponent<BoxCollider>());
+    }
+
+    // Rooftop prop: 4 types cycling by building index.
+    // The props container has no scale, so localPosition == worldPosition.
+    static void AddRooftopProp(GameObject container,
+        float cx, float cz, float bh, float bw, float bd, int idx, Material mat)
+    {
+        float top = bh + 0.44f; // world Y just above roof cap
+
+        var g = new GameObject("RoofProp");
+        g.transform.SetParent(container.transform, false);
+        g.transform.localPosition = new Vector3(cx, top, cz);
+
+        switch (idx % 4)
+        {
+            case 0: // Water tower
+                AddPart(g, "Tank", PrimitiveType.Cylinder,
+                    new Vector3(bw * 0.28f, 0.32f, bd * 0.28f), new Vector3(0.30f, 0.32f, 0.30f), mat);
+                AddPart(g, "Cap", PrimitiveType.Sphere,
+                    new Vector3(bw * 0.28f, 0.70f, bd * 0.28f), new Vector3(0.36f, 0.13f, 0.36f), mat);
+                break;
+
+            case 1: // HVAC unit
+            {
+                float hw = Mathf.Clamp(bw * 0.50f, 0.55f, 1.5f);
+                float hd = Mathf.Clamp(bd * 0.35f, 0.45f, 0.90f);
+                AddPart(g, "HVAC", PrimitiveType.Cube,
+                    new Vector3(0f, 0.20f, 0f), new Vector3(hw, 0.40f, hd), mat);
+                AddPart(g, "Exhaust", PrimitiveType.Cylinder,
+                    new Vector3(hw * 0.32f, 0.55f, 0f), new Vector3(0.10f, 0.17f, 0.10f), mat);
+                break;
+            }
+
+            case 2: // Antenna + dish
+                AddPart(g, "Mast", PrimitiveType.Cylinder,
+                    new Vector3(bw * 0.10f, 0.48f, 0f), new Vector3(0.04f, 0.48f, 0.04f), mat);
+                AddPart(g, "Dish", PrimitiveType.Sphere,
+                    new Vector3(bw * 0.10f + 0.22f, 1.05f, 0f), new Vector3(0.22f, 0.10f, 0.20f), mat);
+                break;
+
+            case 3: // Penthouse / mechanical room
+            {
+                float rw  = Mathf.Clamp(bw * 0.42f, 0.55f, 1.25f);
+                float rd  = Mathf.Clamp(bd * 0.40f, 0.45f, 0.85f);
+                var pm    = new Material(mat); pm.color = mat.color * 1.25f;
+                AddPart(g, "Room", PrimitiveType.Cube,
+                    new Vector3(0f, 0.30f, 0f), new Vector3(rw, 0.60f, rd), pm);
+                AddPart(g, "Roof", PrimitiveType.Cube,
+                    new Vector3(0f, 0.63f, 0f), new Vector3(rw * 1.08f, 0.07f, rd * 1.08f), mat);
+                break;
+            }
+        }
+    }
+
     // =========================================================================
-    // STREET PROPS — lights and trees
+    // STREET LIGHTS — intersections + mid-road fill lights
     // =========================================================================
 
     static void BuildStreetLights(GameObject root, Material poleMat, Material bulbMat)
     {
-        GameObject c = new GameObject("StreetLights");
+        var c = new GameObject("StreetLights");
         c.transform.SetParent(root.transform, false);
 
-        // Lights at all nine road intersections.
-        Vector3[] positions = {
+        // Nine road intersections
+        Vector3[] ixPositions = {
             new Vector3(  0f, 0f,   0f), new Vector3( 15f, 0f,  15f),
             new Vector3(-15f, 0f,  15f), new Vector3( 15f, 0f, -15f),
             new Vector3(-15f, 0f, -15f), new Vector3(  0f, 0f,  15f),
             new Vector3(  0f, 0f, -15f), new Vector3( 15f, 0f,   0f),
             new Vector3(-15f, 0f,   0f),
         };
+        foreach (var p in ixPositions) PlaceLight(c, p, poleMat, bulbMat);
 
-        foreach (var pos in positions)
-            BuildOneLight(c, pos, poleMat, bulbMat);
+        // Mid-road fill lights (one per road segment, alternating sides)
+        Vector3[] midPositions = {
+            // EW main
+            new Vector3(-7.5f, 0f,  2.0f), new Vector3( 7.5f, 0f, -2.0f),
+            // NS main
+            new Vector3( 2.0f, 0f, -7.5f), new Vector3(-2.0f, 0f,  7.5f),
+            // EW north
+            new Vector3(-7.5f, 0f, 17.0f), new Vector3( 7.5f, 0f, 13.0f),
+            // EW south
+            new Vector3(-7.5f, 0f,-13.0f), new Vector3( 7.5f, 0f,-17.0f),
+            // NS east
+            new Vector3(17.0f, 0f, -7.5f), new Vector3(13.0f, 0f,  7.5f),
+            // NS west
+            new Vector3(-13.0f,0f, -7.5f), new Vector3(-17.0f,0f,  7.5f),
+        };
+        foreach (var p in midPositions) PlaceLight(c, p, poleMat, bulbMat);
     }
 
-    static void BuildOneLight(GameObject parent, Vector3 worldPos, Material poleMat, Material bulbMat)
+    static void PlaceLight(GameObject parent, Vector3 worldPos, Material poleMat, Material bulbMat)
     {
-        GameObject lr = new GameObject("StreetLight");
+        var lr = new GameObject("StreetLight");
         lr.transform.SetParent(parent.transform, false);
         lr.transform.position = worldPos;
 
-        // Vertical post
         AddPart(lr, "Post", PrimitiveType.Cylinder,
             new Vector3(0f, 2.0f, 0f), new Vector3(0.08f, 2.0f, 0.08f), poleMat);
-
-        // Horizontal arm at top
         AddPart(lr, "Arm", PrimitiveType.Cube,
             new Vector3(0.55f, 4.0f, 0f), new Vector3(1.1f, 0.08f, 0.08f), poleMat);
-
-        // Lamp bulb sphere
         AddPart(lr, "Bulb", PrimitiveType.Sphere,
             new Vector3(1.1f, 3.95f, 0f), new Vector3(0.28f, 0.18f, 0.28f), bulbMat);
 
-        // Point light — warm yellow, range 12 units
-        GameObject lo = new GameObject("PointLight");
+        var lo = new GameObject("PL");
         lo.transform.SetParent(lr.transform, false);
         lo.transform.localPosition = new Vector3(1.1f, 3.9f, 0f);
-        Light pl  = lo.AddComponent<Light>();
+        var pl   = lo.AddComponent<Light>();
         pl.type      = LightType.Point;
-        pl.color     = new Color(1.0f, 0.88f, 0.52f);
-        pl.intensity = 3.0f;
-        pl.range     = 12f;
+        pl.color     = new Color(1.0f, 0.88f, 0.50f);
+        pl.intensity = 2.8f;
+        pl.range     = 11f;
     }
+
+    // =========================================================================
+    // TREES
+    // =========================================================================
 
     static void BuildTrees(GameObject root, Material trunkMat, Material leafMat)
     {
-        GameObject c = new GameObject("Trees");
+        var c = new GameObject("Trees");
         c.transform.SetParent(root.transform, false);
 
         Vector3[] positions = {
@@ -508,10 +638,9 @@ public static class NightShiftCityBuilder
 
         foreach (var pos in positions)
         {
-            GameObject tr = new GameObject("Tree");
+            var tr = new GameObject("Tree");
             tr.transform.SetParent(c.transform, false);
             tr.transform.position = pos;
-
             AddPart(tr, "Trunk",   PrimitiveType.Cylinder,
                 new Vector3(0f, 0.6f, 0f), new Vector3(0.15f, 0.6f, 0.15f), trunkMat);
             AddPart(tr, "Foliage", PrimitiveType.Sphere,
@@ -520,22 +649,26 @@ public static class NightShiftCityBuilder
     }
 
     // =========================================================================
-    // CAMERA
+    // CAMERA — improved angle + WASD controller
     // =========================================================================
 
     static void PositionCamera()
     {
-        Camera cam = Camera.main;
+        var cam = Camera.main;
         if (cam == null)
         {
-            GameObject co = new GameObject("Main Camera");
+            var co = new GameObject("Main Camera");
             co.tag = "MainCamera";
             cam    = co.AddComponent<Camera>();
             co.AddComponent<AudioListener>();
         }
-        cam.transform.position = new Vector3(0f, 30f, -24f);
-        cam.transform.rotation = Quaternion.Euler(48f, 0f, 0f);
+        cam.transform.position = new Vector3(2f, 32f, -26f);
+        cam.transform.rotation = Quaternion.Euler(50f, -3f, 0f);
         cam.farClipPlane       = 300f;
+
+        // CameraController enables WASD navigation during Play mode.
+        if (cam.GetComponent<CameraController>() == null)
+            cam.gameObject.AddComponent<CameraController>();
     }
 
     // =========================================================================
@@ -547,30 +680,38 @@ public static class NightShiftCityBuilder
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
             AssetDatabase.CreateFolder("Assets", "Prefabs");
 
-        GameObject root = new GameObject("Trash");
+        var root = new GameObject("Trash");
         root.tag = "Trash";
         root.AddComponent<TrashItem>();
 
-        // Main bright yellow chunk
-        GameObject c1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c1.name = "Chunk_Main"; c1.transform.SetParent(root.transform, false);
+        // Chunk 1 — main bright yellow block
+        var c1  = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        c1.name = "Chunk_1"; c1.transform.SetParent(root.transform, false);
         c1.transform.localPosition = new Vector3(0f, 0.25f, 0f);
         c1.transform.localScale    = new Vector3(0.55f, 0.50f, 0.55f);
         c1.GetComponent<Renderer>().material = mat;
         Object.DestroyImmediate(c1.GetComponent<BoxCollider>());
 
-        // Small tilted second chunk for a pile look
-        Material mat2 = new Material(mat); mat2.color = new Color(0.95f, 0.58f, 0.04f);
-        GameObject c2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c2.name = "Chunk_Top"; c2.transform.SetParent(root.transform, false);
-        c2.transform.localPosition    = new Vector3(0.08f, 0.60f, 0.05f);
-        c2.transform.localScale       = new Vector3(0.35f, 0.30f, 0.30f);
+        // Chunk 2 — smaller tilted block (orange variant)
+        var m2  = new Material(mat); m2.color = new Color(0.95f, 0.58f, 0.04f);
+        var c2  = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        c2.name = "Chunk_2"; c2.transform.SetParent(root.transform, false);
+        c2.transform.localPosition    = new Vector3(0.12f, 0.60f, 0.05f);
+        c2.transform.localScale       = new Vector3(0.34f, 0.28f, 0.28f);
         c2.transform.localEulerAngles = new Vector3(8f, 28f, 12f);
-        c2.GetComponent<Renderer>().material = mat2;
+        c2.GetComponent<Renderer>().material = m2;
         Object.DestroyImmediate(c2.GetComponent<BoxCollider>());
 
+        // Chunk 3 — small cylinder "can" for visual variety
+        var c3  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        c3.name = "Chunk_3"; c3.transform.SetParent(root.transform, false);
+        c3.transform.localPosition = new Vector3(-0.16f, 0.25f, 0.14f);
+        c3.transform.localScale    = new Vector3(0.18f, 0.20f, 0.18f);
+        c3.GetComponent<Renderer>().material = mat;
+        Object.DestroyImmediate(c3.GetComponent<CapsuleCollider>());
+
         const string path = "Assets/Prefabs/Trash.prefab";
-        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+        var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
         return prefab;
     }
@@ -580,27 +721,46 @@ public static class NightShiftCityBuilder
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
             AssetDatabase.CreateFolder("Assets", "Prefabs");
 
-        GameObject root = new GameObject("Pothole");
+        var root = new GameObject("Pothole");
         root.tag = "Pothole";
         root.AddComponent<PotholeItem>();
 
-        // Dark flat disc — damaged road surface
-        GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        // Flat dark base disc
+        var disc  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         disc.name = "Base"; disc.transform.SetParent(root.transform, false);
         disc.transform.localScale = new Vector3(1.3f, 0.04f, 1.3f);
         disc.GetComponent<Renderer>().material = baseMat;
         Object.DestroyImmediate(disc.GetComponent<CapsuleCollider>());
 
-        // Slightly smaller emissive warning ring on top — visible at night
-        GameObject ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        // Emissive warning ring
+        var ring  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         ring.name = "Warning"; ring.transform.SetParent(root.transform, false);
         ring.transform.localPosition = new Vector3(0f, 0.01f, 0f);
         ring.transform.localScale    = new Vector3(1.0f, 0.05f, 1.0f);
         ring.GetComponent<Renderer>().material = warnMat;
         Object.DestroyImmediate(ring.GetComponent<CapsuleCollider>());
 
+        // Crack lines — thin flat cubes radiating from center
+        var crackMat = new Material(baseMat); crackMat.color = baseMat.color * 0.5f;
+
+        (Vector3 pos, Vector3 scale, float rotY)[] cracks = {
+            (new Vector3( 0.10f, 0.02f,  0.10f), new Vector3(0.85f, 0.03f, 0.07f),  18f),
+            (new Vector3(-0.10f, 0.02f, -0.05f), new Vector3(0.55f, 0.03f, 0.05f), -35f),
+            (new Vector3( 0.05f, 0.02f, -0.15f), new Vector3(0.60f, 0.03f, 0.05f),  65f),
+        };
+        foreach (var (pos, scale, rotY) in cracks)
+        {
+            var cr  = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cr.name = "Crack"; cr.transform.SetParent(root.transform, false);
+            cr.transform.localPosition    = pos;
+            cr.transform.localScale       = scale;
+            cr.transform.localEulerAngles = new Vector3(0f, rotY, 0f);
+            cr.GetComponent<Renderer>().material = crackMat;
+            Object.DestroyImmediate(cr.GetComponent<BoxCollider>());
+        }
+
         const string path = "Assets/Prefabs/Pothole.prefab";
-        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+        var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
         return prefab;
     }
@@ -611,95 +771,85 @@ public static class NightShiftCityBuilder
 
     static void BuildCityManager(GameObject root)
     {
-        GameObject obj = new GameObject("CityManager");
+        var obj = new GameObject("CityManager");
         obj.transform.SetParent(root.transform, false);
         obj.AddComponent<CityManager>();
-        obj.AddComponent<CityUI>(); // HUD builds itself at runtime
+        obj.AddComponent<CityUI>();
     }
 
     static void BuildTrashSpawner(GameObject root, GameObject prefab)
     {
-        GameObject obj  = new GameObject("TrashSpawner");
+        var obj = new GameObject("TrashSpawner");
         obj.transform.SetParent(root.transform, false);
-        TrashSpawner ts = obj.AddComponent<TrashSpawner>();
-        ts.trashPrefab  = prefab;
-        ts.spawnInterval= 5f;
-        ts.mapRange     = 18f;
-        ts.spawnY       = 0.5f;
+        var ts  = obj.AddComponent<TrashSpawner>();
+        ts.trashPrefab    = prefab;
+        ts.spawnInterval  = 5f;
+        ts.mapRange       = 18f;
+        ts.spawnY         = 0.5f;
     }
 
     static void BuildPotholeSpawner(GameObject root, GameObject prefab)
     {
-        GameObject obj    = new GameObject("PotholeSpawner");
+        var obj = new GameObject("PotholeSpawner");
         obj.transform.SetParent(root.transform, false);
-        PotholeSpawner ps = obj.AddComponent<PotholeSpawner>();
-        ps.potholePrefab  = prefab;
-        ps.spawnInterval  = 10f;
-        ps.spawnY         = 0.04f;
+        var ps = obj.AddComponent<PotholeSpawner>();
+        ps.potholePrefab = prefab;
+        ps.spawnInterval = 10f;
+        ps.spawnY        = 0.04f;
     }
 
     // =========================================================================
     // ROBOTS
     // =========================================================================
 
-    static void BuildCleanerBots(GameObject root,
-        Material body, Material wheel, Material eye, Material light)
+    static void BuildCleanerBots(GameObject root, Material body, Material wheel,
+        Material eye, Material light, Material brush)
     {
-        GameObject c = new GameObject("CleanerBots");
+        var c = new GameObject("CleanerBots");
         c.transform.SetParent(root.transform, false);
 
         Vector3[] starts = {
-            new Vector3(-5f, 0f, -5f),
-            new Vector3( 5f, 0f, -5f),
-            new Vector3( 0f, 0f,  5f),
+            new Vector3(-5f, 0f, -5f), new Vector3(5f, 0f, -5f), new Vector3(0f, 0f, 5f),
         };
-
         for (int i = 0; i < starts.Length; i++)
         {
-            GameObject bot = BuildBotModel(i + 1, false, body, wheel, eye, light);
+            var bot = BuildBotModel(i + 1, false, body, wheel, eye, light, brush);
             bot.transform.SetParent(c.transform, false);
             bot.transform.position = starts[i];
         }
     }
 
-    static void BuildRepairBots(GameObject root,
-        Material body, Material wheel, Material eye, Material light)
+    static void BuildRepairBots(GameObject root, Material body, Material wheel,
+        Material eye, Material light, Material toolbox)
     {
-        GameObject c = new GameObject("RepairBots");
+        var c = new GameObject("RepairBots");
         c.transform.SetParent(root.transform, false);
 
         Vector3[] starts = {
-            new Vector3(-8f, 0f,  8f),
-            new Vector3( 8f, 0f,  8f),
-            new Vector3( 0f, 0f, -8f),
+            new Vector3(-8f, 0f, 8f), new Vector3(8f, 0f, 8f), new Vector3(0f, 0f, -8f),
         };
-
         for (int i = 0; i < starts.Length; i++)
         {
-            GameObject bot = BuildBotModel(i + 1, true, body, wheel, eye, light);
+            var bot = BuildBotModel(i + 1, true, body, wheel, eye, light, toolbox);
             bot.transform.SetParent(c.transform, false);
             bot.transform.position = starts[i];
         }
     }
 
-    // Builds a multi-part bot model.
-    // isRepair = false → blue CleanerBot with RobotController
-    // isRepair = true  → orange RepairBot with RepairBotController
+    // isRepair=false → blue CleanerBot (RobotController) with cleaning brush
+    // isRepair=true  → orange RepairBot (RepairBotController) with toolbox
     static GameObject BuildBotModel(int index, bool isRepair,
-        Material body, Material wheel, Material eye, Material light)
+        Material body, Material wheel, Material eye, Material light, Material tool)
     {
         string name = isRepair
-            ? "RepairBot_" + index.ToString("D2")
+            ? "RepairBot_"  + index.ToString("D2")
             : "CleanerBot_" + index.ToString("D2");
 
-        GameObject root = new GameObject(name);
-
-        // RobotController / RepairBotController is on the PARENT.
-        // Moving the parent moves the whole robot; all visual parts follow.
+        var root = new GameObject(name);
         if (isRepair) root.AddComponent<RepairBotController>();
         else          root.AddComponent<RobotController>();
 
-        // ---- Body parts (local positions/scales) ----------------------------
+        // ---- Body -----------------------------------------------------------
         AddPart(root, "Base",    PrimitiveType.Cube,
             new Vector3(0f, 0.12f, 0f),    new Vector3(1.00f, 0.25f, 1.30f), body);
         AddPart(root, "Body",    PrimitiveType.Cube,
@@ -710,10 +860,13 @@ public static class NightShiftCityBuilder
             new Vector3(0f, 1.35f, 0.34f), new Vector3(0.18f, 0.18f, 0.18f), eye);
         AddPart(root, "Antenna", PrimitiveType.Cylinder,
             new Vector3(0f, 1.75f, 0f),    new Vector3(0.05f, 0.20f, 0.05f), body);
-        AddPart(root, "Light",   PrimitiveType.Sphere,
-            new Vector3(0f, 1.98f, 0f),    new Vector3(0.13f, 0.13f, 0.13f), light);
 
-        // ---- Wheels (cylinders rotated 90° on Z to look like side wheels) ---
+        // Indicator light — gets BotPulse for animated glow
+        var lightPart = AddPart(root, "Light", PrimitiveType.Sphere,
+            new Vector3(0f, 1.98f, 0f), new Vector3(0.13f, 0.13f, 0.13f), light);
+        lightPart.AddComponent<BotPulse>();
+
+        // ---- Wheels (cylinder rotated 90° on Z = side-facing disc) ---------
         (string n, Vector3 p)[] wheels = {
             ("Wheel_FL", new Vector3( 0.58f, 0.25f,  0.44f)),
             ("Wheel_FR", new Vector3(-0.58f, 0.25f,  0.44f)),
@@ -722,21 +875,36 @@ public static class NightShiftCityBuilder
         };
         foreach (var (n, p) in wheels)
         {
-            GameObject w = AddPart(root, n, PrimitiveType.Cylinder,
+            var w = AddPart(root, n, PrimitiveType.Cylinder,
                 p, new Vector3(0.55f, 0.10f, 0.55f), wheel);
             w.transform.localEulerAngles = new Vector3(0f, 0f, 90f);
         }
 
-        // ---- Billboard name label above the bot -----------------------------
-        GameObject lo = new GameObject("Label");
+        // ---- Tool attachment ------------------------------------------------
+        if (!isRepair)
+        {
+            // CleanerBot: rotating brush disc at the front base
+            AddPart(root, "Brush", PrimitiveType.Cylinder,
+                new Vector3(0f, 0.15f, 0.70f), new Vector3(0.65f, 0.06f, 0.65f), tool);
+        }
+        else
+        {
+            // RepairBot: toolbox mounted on front of body
+            AddPart(root, "Toolbox", PrimitiveType.Cube,
+                new Vector3(0f, 0.64f, 0.46f), new Vector3(0.42f, 0.32f, 0.30f), tool);
+        }
+
+        // ---- Billboard name label -------------------------------------------
+        string labelText = isRepair ? "RBot_"  + index.ToString("D2")
+                                    : "Bot_"   + index.ToString("D2");
+        var lo  = new GameObject("Label");
         lo.transform.SetParent(root.transform, false);
         lo.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-
-        TextMeshPro tmp = lo.AddComponent<TextMeshPro>();
-        tmp.text        = isRepair ? "RBot_" + index.ToString("D2") : "Bot_" + index.ToString("D2");
-        tmp.fontSize    = 2f;
-        tmp.alignment   = TextAlignmentOptions.Center;
-        tmp.color       = isRepair ? new Color(1f, 0.70f, 0.25f) : Color.white;
+        var tmp = lo.AddComponent<TextMeshPro>();
+        tmp.text      = labelText;
+        tmp.fontSize  = 2f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color     = isRepair ? new Color(1f, 0.70f, 0.25f) : Color.white;
         lo.AddComponent<RobotLabel>();
 
         return root;
