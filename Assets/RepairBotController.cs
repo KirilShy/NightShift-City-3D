@@ -16,6 +16,9 @@ public class RepairBotController : MonoBehaviour
     // The pothole this bot is currently heading toward (null = searching).
     private PotholeItem currentPothole;
 
+    // True when this bot has a pothole target. Read by RobotObserver for status text.
+    public bool IsWorking => currentPothole != null;
+
     void Update()
     {
         // Look for a pothole if we don't have a target.

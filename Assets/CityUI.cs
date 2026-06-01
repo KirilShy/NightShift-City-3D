@@ -37,7 +37,7 @@ public class CityUI : MonoBehaviour
         pr.anchorMax          = new Vector2(0f, 1f);
         pr.pivot              = new Vector2(0f, 1f);
         pr.anchoredPosition   = new Vector2(10f, -10f);
-        pr.sizeDelta          = new Vector2(310f, 270f);
+        pr.sizeDelta          = new Vector2(310f, 380f);
 
         // ----- Text ---------------------------------------------------------
         GameObject to         = new GameObject("Text");
@@ -53,7 +53,7 @@ public class CityUI : MonoBehaviour
         tr.anchorMax          = new Vector2(0f, 1f);
         tr.pivot              = new Vector2(0f, 1f);
         tr.anchoredPosition   = new Vector2(20f, -18f);
-        tr.sizeDelta          = new Vector2(290f, 250f);
+        tr.sizeDelta          = new Vector2(290f, 360f);
     }
 
     void Update()
@@ -77,16 +77,29 @@ public class CityUI : MonoBehaviour
         else if (health > 40) { status = "WARNING";  sc = "#FFD700"; }
         else                  { status = "CRITICAL"; sc = "#FF4444"; }
 
+        // Current camera mode (set by CameraModeManager).
+        string mode = CameraModeManager.ModeName;
+
+        // While in Citizen mode, show the nearest robot's status if one is close.
+        string observe = "";
+        if (mode == "Citizen" && !string.IsNullOrEmpty(RobotObserver.Info))
+            observe = $"\n<color=#AEE9FF>* {RobotObserver.Info}</color>";
+
         _text.text =
-            "<b>NIGHTSHIFT CITY</b>  <size=11><color=#88AACC>v0.3</color></size>\n"
-          + $"<color={sc}><b>[ {status} ]</b></color>\n"
+            "<b>NIGHTSHIFT CITY</b>  <size=11><color=#88AACC>v0.4</color></size>\n"
+          + $"<color={sc}><b>[ {status} ]</b></color>   <color=#AAAAAA>Mode:</color> <b>{mode}</b>\n"
           + "─────────────────────\n"
           + $"<b>Health:</b>    <color={hc}><b>{health}%</b></color>\n"
           + "─────────────────────\n"
           + $"<b>Trash</b>      {trash} active  /  {cleaned} cleaned\n"
           + $"<b>Potholes</b>   {potholes} active  /  {repaired} fixed\n"
           + "─────────────────────\n"
-          + $"<color=#88CCFF>▶ CleanerBots</color>   {cleaners}\n"
-          + $"<color=#FFAA44>▶ RepairBots</color>    {repairers}";
+          + $"<color=#88CCFF>> CleanerBots</color>   {cleaners}\n"
+          + $"<color=#FFAA44>> RepairBots</color>    {repairers}"
+          + observe
+          + "\n─────────────────────\n"
+          + "<size=12><color=#99AABB>"
+          + "WASD Move   Mouse Look   Shift Sprint\n"
+          + "[1] Overview   [2] Citizen</color></size>";
     }
 }

@@ -1,33 +1,40 @@
-# NightShift City 3D — v0.3
+# NightShift City 3D — v0.4
 
-A Unity 3D city-maintenance robot simulation. CleanerBots clean trash; RepairBots fix potholes — all running autonomously while a live HUD tracks city health. Built entirely with Unity primitives and generated materials.
+A Unity 3D city-maintenance robot simulation. CleanerBots clean trash; RepairBots fix potholes — all running autonomously while a live HUD tracks city health. **Now with Citizen Mode** — walk the streets in first person and watch the robots work. Built entirely with Unity primitives and generated materials.
 
 ---
 
-## What's New in v0.3 — Visual Polish Update
+## What's New in v0.4 — Citizen Mode
+
+| Area | Changes |
+|---|---|
+| **Citizen Mode** | First-person player capsule with WASD walking, mouse look, sprint, and jump |
+| **Camera modes** | Press **1** for overview, **2** for first-person citizen view |
+| **Observation** | Walk near any robot to see its live status (Cleaning / Repairing / Searching) |
+| **Materials** | Smooth wet-asphalt roads, matte concrete sidewalks |
+| **HUD** | Version v0.4, current mode display, controls reference, robot observation line |
+
+### Earlier — v0.3 Visual Polish
 
 | Area | Changes |
 |---|---|
 | **Buildings** | Lit + unlit window mix, entrance doors, 4 types of rooftop props (water tower, HVAC, antenna, penthouse) |
 | **Roads** | Crosswalks at 5 major intersections, curb edges alongside roads |
-| **Lighting** | 21 total street lights (intersections + mid-road fill), subtle night fog |
-| **Robots** | CleanerBot brush disc at front, RepairBot toolbox on body, pulsing indicator lights |
-| **Trash** | 3-piece pile (two cubes + a can cylinder), brighter yellow |
-| **Potholes** | Dark disc + emissive warning ring + 3 crack lines |
-| **HUD** | Version badge (v0.3), STABLE / WARNING / CRITICAL status, colour-coded bot sections |
-| **Camera** | WASD / scroll / Q-E navigation during Play mode |
+| **Lighting** | 21 total street lights, subtle night fog |
+| **Robots** | CleanerBot brush disc, RepairBot toolbox, pulsing indicator lights |
 
 ---
 
 ## Features
 
+- **Citizen Mode** — walk the city in first person and observe robots up close
+- **Two camera modes** — switch between city overview and first-person citizen view
 - **Autonomous CleanerBots (blue)** — find nearest unclaimed trash, claim it, clean it
 - **Autonomous RepairBots (orange)** — find nearest unclaimed pothole, claim it, repair it
 - **Exclusive claiming** — no two bots of the same type share a target
 - **Procedural city builder** — one-click Editor tool generates the entire scene from code
 - **Night atmosphere** — dark ambient, warm point-lit streets, emissive windows, distance fog
-- **Live city HUD** — status label, colour-coded health, active counts, bot counts
-- **WASD camera controller** — navigate freely in Play mode
+- **Live city HUD** — status label, colour-coded health, mode display, robot observation
 - **Pulsing robot sensors** — indicator lights breathe on each bot
 - **Primitive-only visuals** — zero external asset dependencies
 
@@ -57,14 +64,30 @@ No Inspector wiring required.
 
 ---
 
-## Camera Controls (Play Mode)
+## Controls (Play Mode)
+
+**Mode switching**
 
 | Key | Action |
 |---|---|
-| W / S / ↑ / ↓ | Pan forward / back |
-| A / D / ← / → | Pan left / right |
-| Scroll wheel | Zoom in / out |
-| Q / E | Keyboard zoom out / in |
+| 1 | Overview camera |
+| 2 | Citizen (first-person) |
+
+**Overview mode**
+
+| Key | Action |
+|---|---|
+| WASD / Arrows | Pan |
+| Scroll / Q / E | Zoom |
+
+**Citizen mode**
+
+| Key | Action |
+|---|---|
+| WASD | Walk |
+| Mouse | Look around |
+| Left Shift | Sprint |
+| Space | Jump |
 
 ---
 
@@ -80,9 +103,12 @@ Assets/
 ├── Scenes/
 │   └── SampleScene.unity
 ├── BotPulse.cs                    # Pulsing indicator light animation
-├── CameraController.cs            # WASD/scroll camera navigation
+├── CameraController.cs            # Overview WASD/scroll navigation
+├── CameraModeManager.cs           # Switches overview <-> citizen cameras
+├── PlayerController.cs            # First-person citizen movement
+├── RobotObserver.cs               # Shows nearby robot status (citizen mode)
 ├── CityManager.cs                 # Singleton — all city stats
-├── CityUI.cs                      # Self-building runtime HUD (v0.3)
+├── CityUI.cs                      # Self-building runtime HUD (v0.4)
 ├── RobotController.cs             # CleanerBot movement + trash logic
 ├── RobotLabel.cs                  # Billboard name labels above bots
 ├── RepairBotController.cs         # RepairBot movement + pothole logic

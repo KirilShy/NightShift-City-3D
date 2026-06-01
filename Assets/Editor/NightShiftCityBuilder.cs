@@ -39,10 +39,10 @@ public static class NightShiftCityBuilder
         // ---- Environment materials ------------------------------------------
         Material matGround    = Make("Mat_Ground",    new Color(0.20f, 0.18f, 0.16f));
         Material matGrass     = Make("Mat_Grass",     new Color(0.09f, 0.24f, 0.09f));
-        Material matRoad      = Make("Mat_Road",      new Color(0.09f, 0.09f, 0.09f));
+        Material matRoad      = Surface("Mat_Road",     new Color(0.07f, 0.07f, 0.08f), 0.45f); // smooth wet asphalt
         Material matLane      = Make("Mat_Lane",      new Color(0.90f, 0.88f, 0.72f));
         Material matCrosswalk = Make("Mat_Crosswalk", new Color(0.86f, 0.84f, 0.70f));
-        Material matSidewalk  = Make("Mat_Sidewalk",  new Color(0.38f, 0.36f, 0.33f));
+        Material matSidewalk  = Surface("Mat_Sidewalk", new Color(0.40f, 0.38f, 0.35f), 0.08f); // matte concrete
         Material matCurb      = Make("Mat_Curb",      new Color(0.48f, 0.46f, 0.43f));
         Material matPole      = Make("Mat_Pole",      new Color(0.17f, 0.17f, 0.19f));
         Material matBulb      = Emissive("Mat_Bulb",  new Color(1f, 0.95f, 0.7f),  new Color(1.6f, 1.1f, 0.3f));
@@ -82,6 +82,9 @@ public static class NightShiftCityBuilder
         // ---- Build scene ----------------------------------------------------
         GameObject root = new GameObject(RootName);
 
+        // Player body material (PART E / citizen mode).
+        Material matPlayer = Make("Mat_Player", new Color(0.85f, 0.78f, 0.55f));
+
         SetupNightLighting();
         BuildGround(root, matGround);
         BuildGrassPatches(root, matGrass);
@@ -90,7 +93,18 @@ public static class NightShiftCityBuilder
         BuildBuildings(root, bMats, matWinLit, matWinDark, matDoor, matRoofDet);
         BuildStreetLights(root, matPole, matBulb);
         BuildTrees(root, matTrunk, matLeaf);
-        PositionCamera();
+
+        Camera overviewCam = PositionCamera();
+
+        // ---- Player / Citizen ------------------------------------------------
+        BuildPlayer(root, matPlayer, out PlayerController playerCtrl, out Camera citizenCam);
+
+        // ---- Camera mode manager (wires both cameras + controllers) ----------
+        var modeMgr                = overviewCam.gameObject.AddComponent<CameraModeManager>();
+        modeMgr.overviewCamera     = overviewCam;
+        modeMgr.citizenCamera      = citizenCam;
+        modeMgr.overviewController = overviewCam.GetComponent<CameraController>();
+        modeMgr.playerController   = playerCtrl;
 
         GameObject trashPrefab   = CreateTrashPrefab(matTrash);
         GameObject potholePrefab = CreatePotholePrefab(matPothole, matPotWarn);
@@ -102,12 +116,12 @@ public static class NightShiftCityBuilder
         BuildRepairBots(root, matRepairBody, matWheel, matOrangeEye, matBotLight, matToolbox);
 
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-        Debug.Log("[Builder] v0.3 build complete.");
+        Debug.Log("[Builder] v0.4 build complete.");
 
-        EditorUtility.DisplayDialog("NightShift City v0.3 Built!",
-            "Scene is ready.\n\n" +
-            "  WASD / Arrows — pan camera\n" +
-            "  Scroll / Q-E  — zoom\n\n" +
+        EditorUtility.DisplayDialog("NightShift City v0.4 Built!",
+            "Scene is ready — now with Citizen Mode!\n\n" +
+            "  [1] Overview  — WASD pan, scroll zoom\n" +
+            "  [2] Citizen   — WASD walk, mouse look, Shift sprint\n\n" +
             "Press Play to start the simulation.", "OK");
     }
 
@@ -156,6 +170,16 @@ public static class NightShiftCityBuilder
         var m = Make(name, baseCol);
         m.EnableKeyword("_EMISSION");
         if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", glow);
+        return m;
+    }
+
+    // Sets surface smoothness (0 = matte, 1 = mirror) for a more realistic look.
+    // Wet asphalt is fairly smooth; concrete sidewalks are matte.
+    static Material Surface(string name, Color color, float smoothness)
+    {
+        var m = Make(name, color);
+        if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smoothness);
+        if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smoothness); // Standard fallback
         return m;
     }
 
@@ -279,7 +303,8 @@ public static class NightShiftCityBuilder
         for (int i = 0; i < count; i++)
         {
             float off   = start + i * step;
-            var pos     = ew ? new Vector3(off, 0.04f, center)  : new Vector3(center, 0.04f, off);
+            // y=0.07 keeps the marking clearly above the road top (~0.045) to avoid z-fighting.
+            var pos     = ew ? new Vector3(off, 0.07f, center)  : new Vector3(center, 0.07f, off);
             var scale   = ew ? new Vector3(dash, 0.02f, 0.12f)  : new Vector3(0.12f, 0.02f, dash);
             var d = GameObject.CreatePrimitive(PrimitiveType.Cube);
             d.name = "Dash"; d.transform.SetParent(parent.transform, false);
@@ -350,21 +375,22 @@ public static class NightShiftCityBuilder
 
         foreach (var (ix, iz, ewW, nsW) in ixns)
         {
+            // Stripe y=0.06 sits just above the road surface (~0.045) to avoid z-fighting.
             // East + West: stripes on EW road, crossing the NS road
             for (int i = 0; i < 4; i++)
             {
                 float xE = ix + nsW * 0.5f + 0.25f + i * 0.55f;
                 float xW = ix - nsW * 0.5f - 0.25f - i * 0.55f;
-                PutStripe(c, new Vector3(xE, 0.035f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
-                PutStripe(c, new Vector3(xW, 0.035f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
+                PutStripe(c, new Vector3(xE, 0.06f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
+                PutStripe(c, new Vector3(xW, 0.06f, iz), new Vector3(0.42f, 0.02f, ewW), mat);
             }
             // North + South: stripes on NS road, crossing the EW road
             for (int i = 0; i < 4; i++)
             {
                 float zN = iz + ewW * 0.5f + 0.25f + i * 0.55f;
                 float zS = iz - ewW * 0.5f - 0.25f - i * 0.55f;
-                PutStripe(c, new Vector3(ix, 0.035f, zN), new Vector3(nsW, 0.02f, 0.42f), mat);
-                PutStripe(c, new Vector3(ix, 0.035f, zS), new Vector3(nsW, 0.02f, 0.42f), mat);
+                PutStripe(c, new Vector3(ix, 0.06f, zN), new Vector3(nsW, 0.02f, 0.42f), mat);
+                PutStripe(c, new Vector3(ix, 0.06f, zS), new Vector3(nsW, 0.02f, 0.42f), mat);
             }
         }
     }
@@ -652,7 +678,8 @@ public static class NightShiftCityBuilder
     // CAMERA — improved angle + WASD controller
     // =========================================================================
 
-    static void PositionCamera()
+    // Sets up the overview camera and returns it so the mode manager can wire it.
+    static Camera PositionCamera()
     {
         var cam = Camera.main;
         if (cam == null)
@@ -669,6 +696,58 @@ public static class NightShiftCityBuilder
         // CameraController enables WASD navigation during Play mode.
         if (cam.GetComponent<CameraController>() == null)
             cam.gameObject.AddComponent<CameraController>();
+
+        return cam;
+    }
+
+    // =========================================================================
+    // PLAYER / CITIZEN
+    // =========================================================================
+
+    // Builds a first-person player capsule with a CharacterController, a child
+    // camera at eye height, and the observer. Returns the PlayerController and
+    // the citizen Camera via out parameters so the mode manager can wire them.
+    static GameObject BuildPlayer(GameObject root, Material bodyMat,
+        out PlayerController playerCtrl, out Camera citizenCam)
+    {
+        var player = new GameObject("Player");
+        player.transform.SetParent(root.transform, false);
+        // Start on the main road, south of centre, looking north into the city.
+        player.transform.position = new Vector3(0f, 0.9f, -10f);
+
+        // CharacterController = ~1.8 m tall human capsule.
+        var cc        = player.AddComponent<CharacterController>();
+        cc.height     = 1.8f;
+        cc.radius     = 0.35f;
+        cc.center     = new Vector3(0f, 0f, 0f);
+
+        playerCtrl = player.AddComponent<PlayerController>();
+        player.AddComponent<RobotObserver>();
+
+        // Visible body capsule (default capsule is 2 m tall → scale 0.9 = 1.8 m).
+        var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        body.name = "Body";
+        body.transform.SetParent(player.transform, false);
+        body.transform.localPosition = Vector3.zero;
+        body.transform.localScale    = new Vector3(0.7f, 0.9f, 0.7f);
+        body.GetComponent<Renderer>().material = bodyMat;
+        Object.DestroyImmediate(body.GetComponent<CapsuleCollider>()); // CC handles collision
+
+        // First-person camera at eye height, disabled until Citizen mode.
+        var camObj = new GameObject("PlayerCamera");
+        camObj.transform.SetParent(player.transform, false);
+        camObj.transform.localPosition = new Vector3(0f, 0.7f, 0f);
+        citizenCam               = camObj.AddComponent<Camera>();
+        citizenCam.nearClipPlane = 0.1f;
+        citizenCam.farClipPlane  = 200f;
+        citizenCam.enabled       = false;
+        var al = camObj.AddComponent<AudioListener>();
+        al.enabled = false;
+
+        playerCtrl.cameraPivot = camObj.transform;
+        playerCtrl.enabled     = false; // mode manager enables it in Citizen mode
+
+        return player;
     }
 
     // =========================================================================

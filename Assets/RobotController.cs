@@ -15,6 +15,9 @@ public class RobotController : MonoBehaviour
     // The trash this robot is currently heading toward (null = searching).
     private TrashItem currentTrash;
 
+    // True when this bot has a trash target. Read by RobotObserver for status text.
+    public bool IsWorking => currentTrash != null;
+
     void Update()
     {
         // If we have no target, look for one every frame.
