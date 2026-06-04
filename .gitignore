@@ -23,3 +23,7 @@ Thumbs.db
 # Unity crash reports
 sysinfo.txt
 crashlytics-build.properties
+
+# Unity crash auto-recovery folder
+/Assets/_Recovery/
+/Assets/_Recovery.meta

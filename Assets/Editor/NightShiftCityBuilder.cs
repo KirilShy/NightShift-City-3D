@@ -66,8 +66,6 @@ public static class NightShiftCityBuilder
 
         // ---- Problem object materials ----------------------------------------
         Material matTrash   = Make("Mat_Trash",   new Color(1.00f, 0.85f, 0.00f));
-        Material matPothole = Make("Mat_Pothole", new Color(0.12f, 0.09f, 0.07f));
-        Material matPotWarn = Emissive("Mat_PotWarn", new Color(0.88f, 0.42f, 0.0f), new Color(0.5f, 0.20f, 0.0f));
 
         // ---- Robot materials ------------------------------------------------
         Material matCleanBody  = Make("Mat_CleanBody",  new Color(0.11f, 0.30f, 0.58f));
@@ -107,7 +105,7 @@ public static class NightShiftCityBuilder
         modeMgr.playerController   = playerCtrl;
 
         GameObject trashPrefab   = CreateTrashPrefab(matTrash);
-        GameObject potholePrefab = CreatePotholePrefab(matPothole, matPotWarn);
+        GameObject potholePrefab = CreatePotholePrefab();
 
         BuildCityManager(root);
         BuildTrashSpawner(root, trashPrefab);
@@ -754,7 +752,26 @@ public static class NightShiftCityBuilder
     // PREFABS
     // =========================================================================
 
-    static GameObject CreateTrashPrefab(Material mat)
+    // Adds a child primitive to a prefab root with full local transform + rotation.
+    // Strips the collider (problem objects don't need physics).
+    static GameObject Piece(GameObject parent, string name, PrimitiveType type,
+        Vector3 pos, Vector3 scale, Vector3 euler, Material mat)
+    {
+        var o = GameObject.CreatePrimitive(type);
+        o.name = name;
+        o.transform.SetParent(parent.transform, false);
+        o.transform.localPosition    = pos;
+        o.transform.localScale       = scale;
+        o.transform.localEulerAngles = euler;
+        o.GetComponent<Renderer>().material = mat;
+        Object.DestroyImmediate(o.GetComponent<Collider>());
+        return o;
+    }
+
+    // Builds trash that reads as a real pile of garbage: a black bin bag
+    // surrounded by scattered litter (can, paper, cardboard box, chip bag).
+    // The litter's lighter colours keep it readable at night against dark asphalt.
+    static GameObject CreateTrashPrefab(Material brightMat)
     {
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
             AssetDatabase.CreateFolder("Assets", "Prefabs");
@@ -763,31 +780,35 @@ public static class NightShiftCityBuilder
         root.tag = "Trash";
         root.AddComponent<TrashItem>();
 
-        // Chunk 1 — main bright yellow block
-        var c1  = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c1.name = "Chunk_1"; c1.transform.SetParent(root.transform, false);
-        c1.transform.localPosition = new Vector3(0f, 0.25f, 0f);
-        c1.transform.localScale    = new Vector3(0.55f, 0.50f, 0.55f);
-        c1.GetComponent<Renderer>().material = mat;
-        Object.DestroyImmediate(c1.GetComponent<BoxCollider>());
+        // Materials for the different litter types.
+        Material matBag   = Surface("Mat_TrashBag",   new Color(0.07f, 0.09f, 0.07f), 0.35f); // glossy black bin bag
+        Material matCan   = Surface("Mat_TrashCan",   new Color(0.70f, 0.12f, 0.10f), 0.40f); // red soda can
+        Material matPaper = Make   ("Mat_TrashPaper", new Color(0.85f, 0.84f, 0.78f));        // crumpled paper
+        Material matBox   = Make   ("Mat_TrashBox",   new Color(0.46f, 0.33f, 0.18f));        // cardboard
 
-        // Chunk 2 — smaller tilted block (orange variant)
-        var m2  = new Material(mat); m2.color = new Color(0.95f, 0.58f, 0.04f);
-        var c2  = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c2.name = "Chunk_2"; c2.transform.SetParent(root.transform, false);
-        c2.transform.localPosition    = new Vector3(0.12f, 0.60f, 0.05f);
-        c2.transform.localScale       = new Vector3(0.34f, 0.28f, 0.28f);
-        c2.transform.localEulerAngles = new Vector3(8f, 28f, 12f);
-        c2.GetComponent<Renderer>().material = m2;
-        Object.DestroyImmediate(c2.GetComponent<BoxCollider>());
+        // --- Bin bag: a lumpy black sack (squashed sphere + a tied knot on top) ---
+        Piece(root, "Bag",     PrimitiveType.Sphere,
+            new Vector3(0f, 0.22f, 0f),     new Vector3(0.62f, 0.50f, 0.66f), new Vector3(0f, 20f, 6f),  matBag);
+        Piece(root, "BagLump", PrimitiveType.Sphere,
+            new Vector3(0.14f, 0.30f, -0.10f), new Vector3(0.34f, 0.30f, 0.34f), Vector3.zero,           matBag);
+        Piece(root, "BagKnot", PrimitiveType.Cylinder,
+            new Vector3(-0.05f, 0.48f, 0.04f), new Vector3(0.10f, 0.10f, 0.10f), new Vector3(0f, 0f, 18f), matBag);
 
-        // Chunk 3 — small cylinder "can" for visual variety
-        var c3  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        c3.name = "Chunk_3"; c3.transform.SetParent(root.transform, false);
-        c3.transform.localPosition = new Vector3(-0.16f, 0.25f, 0.14f);
-        c3.transform.localScale    = new Vector3(0.18f, 0.20f, 0.18f);
-        c3.GetComponent<Renderer>().material = mat;
-        Object.DestroyImmediate(c3.GetComponent<CapsuleCollider>());
+        // --- Crushed soda can: a short cylinder lying on its side ---
+        Piece(root, "Can",   PrimitiveType.Cylinder,
+            new Vector3(0.34f, 0.08f, 0.10f), new Vector3(0.13f, 0.17f, 0.13f), new Vector3(90f, 0f, 12f), matCan);
+
+        // --- Crumpled paper ball ---
+        Piece(root, "Paper", PrimitiveType.Sphere,
+            new Vector3(-0.30f, 0.10f, 0.16f), new Vector3(0.20f, 0.18f, 0.21f), new Vector3(15f, 40f, 0f), matPaper);
+
+        // --- Cardboard box: a small tilted cube ---
+        Piece(root, "Box",   PrimitiveType.Cube,
+            new Vector3(-0.08f, 0.12f, -0.28f), new Vector3(0.28f, 0.22f, 0.30f), new Vector3(6f, 24f, 10f), matBox);
+
+        // --- Bright chip bag: small flattened cube, keeps the pile easy to spot ---
+        Piece(root, "ChipBag", PrimitiveType.Cube,
+            new Vector3(0.24f, 0.06f, -0.16f), new Vector3(0.24f, 0.07f, 0.17f), new Vector3(0f, -30f, 4f), brightMat);
 
         const string path = "Assets/Prefabs/Trash.prefab";
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -795,7 +816,11 @@ public static class NightShiftCityBuilder
         return prefab;
     }
 
-    static GameObject CreatePotholePrefab(Material baseMat, Material warnMat)
+    // Builds a pothole that reads as real road damage: a dark broken hole with
+    // a deeper black centre, crumbled asphalt chunks around the rim, and a few
+    // cracks radiating into the road. No bright marker — the dark hole and
+    // lighter broken edges give it contrast against the asphalt.
+    static GameObject CreatePotholePrefab()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
             AssetDatabase.CreateFolder("Assets", "Prefabs");
@@ -804,39 +829,40 @@ public static class NightShiftCityBuilder
         root.tag = "Pothole";
         root.AddComponent<PotholeItem>();
 
-        // Flat dark base disc
-        var disc  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        disc.name = "Base"; disc.transform.SetParent(root.transform, false);
-        disc.transform.localScale = new Vector3(1.3f, 0.04f, 1.3f);
-        disc.GetComponent<Renderer>().material = baseMat;
-        Object.DestroyImmediate(disc.GetComponent<CapsuleCollider>());
+        // Materials: outer damage, deep hole, broken tarmac edges, cracks.
+        Material matOuter = Make("Mat_PotOuter", new Color(0.09f, 0.09f, 0.10f)); // damaged surface
+        Material matHole  = Make("Mat_PotHole",  new Color(0.02f, 0.02f, 0.03f)); // dark depth
+        Material matEdge  = Make("Mat_PotEdge",  new Color(0.17f, 0.17f, 0.18f)); // lighter broken asphalt
+        Material matCrack = Make("Mat_PotCrack", new Color(0.04f, 0.04f, 0.05f)); // crack lines
 
-        // Emissive warning ring
-        var ring  = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        ring.name = "Warning"; ring.transform.SetParent(root.transform, false);
-        ring.transform.localPosition = new Vector3(0f, 0.01f, 0f);
-        ring.transform.localScale    = new Vector3(1.0f, 0.05f, 1.0f);
-        ring.GetComponent<Renderer>().material = warnMat;
-        Object.DestroyImmediate(ring.GetComponent<CapsuleCollider>());
+        // --- Outer damaged patch (slightly elliptical so it isn't a perfect circle) ---
+        Piece(root, "Damage", PrimitiveType.Cylinder,
+            new Vector3(0f, 0.02f, 0f), new Vector3(1.40f, 0.02f, 1.12f), Vector3.zero, matOuter);
 
-        // Crack lines — thin flat cubes radiating from center
-        var crackMat = new Material(baseMat); crackMat.color = baseMat.color * 0.5f;
+        // --- Deeper black centre, offset a little to look uneven ---
+        Piece(root, "Hole", PrimitiveType.Cylinder,
+            new Vector3(0.08f, 0.025f, -0.05f), new Vector3(0.90f, 0.02f, 0.70f), new Vector3(0f, 25f, 0f), matHole);
 
+        // --- Crumbled asphalt chunks around the rim (raised broken edges) ---
+        (Vector3 pos, Vector3 scale, float rotY)[] chunks = {
+            (new Vector3( 0.62f, 0.05f,  0.10f), new Vector3(0.22f, 0.10f, 0.18f),  20f),
+            (new Vector3(-0.58f, 0.05f,  0.18f), new Vector3(0.20f, 0.09f, 0.16f), -35f),
+            (new Vector3( 0.10f, 0.05f,  0.52f), new Vector3(0.24f, 0.08f, 0.16f),  55f),
+            (new Vector3(-0.15f, 0.05f, -0.50f), new Vector3(0.18f, 0.11f, 0.20f),  10f),
+            (new Vector3( 0.45f, 0.05f, -0.38f), new Vector3(0.16f, 0.08f, 0.15f), -60f),
+            (new Vector3(-0.50f, 0.05f, -0.30f), new Vector3(0.19f, 0.09f, 0.17f),  40f),
+        };
+        foreach (var (pos, scale, rotY) in chunks)
+            Piece(root, "Edge", PrimitiveType.Cube, pos, scale, new Vector3(0f, rotY, 0f), matEdge);
+
+        // --- Cracks radiating into the surrounding road ---
         (Vector3 pos, Vector3 scale, float rotY)[] cracks = {
-            (new Vector3( 0.10f, 0.02f,  0.10f), new Vector3(0.85f, 0.03f, 0.07f),  18f),
-            (new Vector3(-0.10f, 0.02f, -0.05f), new Vector3(0.55f, 0.03f, 0.05f), -35f),
-            (new Vector3( 0.05f, 0.02f, -0.15f), new Vector3(0.60f, 0.03f, 0.05f),  65f),
+            (new Vector3( 0.85f, 0.04f,  0.20f), new Vector3(0.70f, 0.02f, 0.05f),  18f),
+            (new Vector3(-0.80f, 0.04f, -0.10f), new Vector3(0.55f, 0.02f, 0.04f), -35f),
+            (new Vector3( 0.20f, 0.04f, -0.78f), new Vector3(0.60f, 0.02f, 0.04f),  72f),
         };
         foreach (var (pos, scale, rotY) in cracks)
-        {
-            var cr  = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cr.name = "Crack"; cr.transform.SetParent(root.transform, false);
-            cr.transform.localPosition    = pos;
-            cr.transform.localScale       = scale;
-            cr.transform.localEulerAngles = new Vector3(0f, rotY, 0f);
-            cr.GetComponent<Renderer>().material = crackMat;
-            Object.DestroyImmediate(cr.GetComponent<BoxCollider>());
-        }
+            Piece(root, "Crack", PrimitiveType.Cube, pos, scale, new Vector3(0f, rotY, 0f), matCrack);
 
         const string path = "Assets/Prefabs/Pothole.prefab";
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -864,7 +890,7 @@ public static class NightShiftCityBuilder
         ts.trashPrefab    = prefab;
         ts.spawnInterval  = 5f;
         ts.mapRange       = 18f;
-        ts.spawnY         = 0.5f;
+        ts.spawnY         = 0f; // pile is modelled sitting on the ground
     }
 
     static void BuildPotholeSpawner(GameObject root, GameObject prefab)
