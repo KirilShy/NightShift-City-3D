@@ -181,6 +181,25 @@ public static class NightShiftCityBuilder
         return m;
     }
 
+    // Saves a material as a real .mat asset in Assets/Materials/ and returns the
+    // saved asset. Materials assigned to PREFAB assets must be saved to disk —
+    // an in-memory material embedded in a prefab loses its shader and renders
+    // magenta. (Scene materials don't need this; the scene file stores them.)
+    static Material SaveMat(Material m)
+    {
+        if (!AssetDatabase.IsValidFolder("Assets/Materials"))
+            AssetDatabase.CreateFolder("Assets", "Materials");
+
+        string path = "Assets/Materials/" + m.name + ".mat";
+
+        // Reuse an existing asset of the same name if we've built before.
+        var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (existing != null) return existing;
+
+        AssetDatabase.CreateAsset(m, path);
+        return m;
+    }
+
     // Creates a primitive child with local position/scale, removes its collider.
     static GameObject AddPart(GameObject parent, string partName, PrimitiveType type,
         Vector3 lp, Vector3 ls, Material mat)
@@ -780,11 +799,13 @@ public static class NightShiftCityBuilder
         root.tag = "Trash";
         root.AddComponent<TrashItem>();
 
-        // Materials for the different litter types.
-        Material matBag   = Surface("Mat_TrashBag",   new Color(0.07f, 0.09f, 0.07f), 0.35f); // glossy black bin bag
-        Material matCan   = Surface("Mat_TrashCan",   new Color(0.70f, 0.12f, 0.10f), 0.40f); // red soda can
-        Material matPaper = Make   ("Mat_TrashPaper", new Color(0.85f, 0.84f, 0.78f));        // crumpled paper
-        Material matBox   = Make   ("Mat_TrashBox",   new Color(0.46f, 0.33f, 0.18f));        // cardboard
+        // Materials for the different litter types (saved as assets so the
+        // prefab keeps them — see SaveMat).
+        Material matBag    = SaveMat(Surface("Mat_TrashBag",   new Color(0.07f, 0.09f, 0.07f), 0.35f)); // glossy black bin bag
+        Material matCan    = SaveMat(Surface("Mat_TrashCan",   new Color(0.70f, 0.12f, 0.10f), 0.40f)); // red soda can
+        Material matPaper  = SaveMat(Make   ("Mat_TrashPaper", new Color(0.85f, 0.84f, 0.78f)));        // crumpled paper
+        Material matBox    = SaveMat(Make   ("Mat_TrashBox",   new Color(0.46f, 0.33f, 0.18f)));        // cardboard
+        Material matBright = SaveMat(brightMat);                                                        // chip bag (passed in)
 
         // --- Bin bag: a lumpy black sack (squashed sphere + a tied knot on top) ---
         Piece(root, "Bag",     PrimitiveType.Sphere,
@@ -808,7 +829,7 @@ public static class NightShiftCityBuilder
 
         // --- Bright chip bag: small flattened cube, keeps the pile easy to spot ---
         Piece(root, "ChipBag", PrimitiveType.Cube,
-            new Vector3(0.24f, 0.06f, -0.16f), new Vector3(0.24f, 0.07f, 0.17f), new Vector3(0f, -30f, 4f), brightMat);
+            new Vector3(0.24f, 0.06f, -0.16f), new Vector3(0.24f, 0.07f, 0.17f), new Vector3(0f, -30f, 4f), matBright);
 
         const string path = "Assets/Prefabs/Trash.prefab";
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -829,11 +850,11 @@ public static class NightShiftCityBuilder
         root.tag = "Pothole";
         root.AddComponent<PotholeItem>();
 
-        // Materials: outer damage, deep hole, broken tarmac edges, cracks.
-        Material matOuter = Make("Mat_PotOuter", new Color(0.09f, 0.09f, 0.10f)); // damaged surface
-        Material matHole  = Make("Mat_PotHole",  new Color(0.02f, 0.02f, 0.03f)); // dark depth
-        Material matEdge  = Make("Mat_PotEdge",  new Color(0.17f, 0.17f, 0.18f)); // lighter broken asphalt
-        Material matCrack = Make("Mat_PotCrack", new Color(0.04f, 0.04f, 0.05f)); // crack lines
+        // Materials (saved as assets so the prefab keeps them — see SaveMat).
+        Material matOuter = SaveMat(Make("Mat_PotOuter", new Color(0.09f, 0.09f, 0.10f))); // damaged surface
+        Material matHole  = SaveMat(Make("Mat_PotHole",  new Color(0.02f, 0.02f, 0.03f))); // dark depth
+        Material matEdge  = SaveMat(Make("Mat_PotEdge",  new Color(0.17f, 0.17f, 0.18f))); // lighter broken asphalt
+        Material matCrack = SaveMat(Make("Mat_PotCrack", new Color(0.04f, 0.04f, 0.05f))); // crack lines
 
         // --- Outer damaged patch (slightly elliptical so it isn't a perfect circle) ---
         Piece(root, "Damage", PrimitiveType.Cylinder,
